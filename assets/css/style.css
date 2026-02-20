@@ -10,7 +10,10 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{
   font-family: Arial, Helvetica, sans-serif;
-  background:var(--bg);
+  background:
+    radial-gradient(circle at 20% 30%, rgba(212,175,55,0.08), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(212,175,55,0.06), transparent 40%),
+    #05050a;
   color:var(--text);
   line-height:1.6;
 }
@@ -48,12 +51,11 @@ nav a:hover{color:var(--gold);}
   align-items:center;
   justify-content:center;
   text-align:center;
-  background:linear-gradient(rgba(0,0,0,.7),rgba(0,0,0,.9));
   padding:0 20px;
 }
 
 .hero h2{
-  font-size:48px;
+  font-size:52px;
   margin-bottom:20px;
 }
 
@@ -69,7 +71,7 @@ nav a:hover{color:var(--gold);}
 }
 
 .btn{
-  padding:12px 25px;
+  padding:14px 30px;
   background:var(--gold);
   color:black;
   border:none;
