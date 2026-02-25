@@ -85,20 +85,24 @@ nav a:hover {
 /* Hero */
 .hero {
   position: relative;
-  height: 75vh;
+  height: 78vh;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  /* Dark gradient fallback when no image is provided */
-  background: linear-gradient(135deg, #1c1c1c 0%, #050505 100%);
+  background:
+    radial-gradient(1200px 700px at 25% 30%, rgba(209,168,29,.22), transparent 60%),
+    radial-gradient(900px 520px at 80% 20%, rgba(209,168,29,.14), transparent 62%),
+    linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.85)),
+    url('../img/hero-suit.jpg') center/cover no-repeat;
 }
+
 
 .hero::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: radial-gradient(circle at 50% 35%, rgba(0,0,0,.30), rgba(0,0,0,.78));
 }
 
 .hero-content {
@@ -238,4 +242,12 @@ nav a:hover {
 
 .footer p {
   margin: 0.2rem 0;
+}
+/* --- V9: premium hero typography & subtle motion --- */
+.hero h1{ letter-spacing: .5px; }
+.hero h2{ letter-spacing: .25px; }
+.hero-content{ animation: heroIn .8s ease-out both; }
+@keyframes heroIn{
+  from{ opacity:0; transform: translateY(10px); }
+  to{ opacity:1; transform: translateY(0); }
 }
