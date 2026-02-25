@@ -16,6 +16,8 @@
 *{ box-sizing:border-box; }
 html,body{ margin:0; padding:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
 a{ color:inherit; text-decoration:none; }
+a:visited{ color:inherit; }
+a:hover{ color: var(--gold2); }
 img{ max-width:100%; display:block; }
 .container{ width: min(var(--max), calc(100% - 40px)); margin: 0 auto; }
 ::selection{ background: rgba(215,176,106,.35); }
@@ -264,4 +266,77 @@ label{ font-size: 13px; color: var(--muted); margin-top: 6px; }
     flex-wrap:wrap;
     gap:8px;
   }
+}
+
+
+/* --- V6 fixes --- */
+.hamburger{ display:none !important; }
+@media (max-width: 980px){
+  .hamburger{ display:inline-flex !important; }
+}
+
+/* Make topbar elements align properly */
+.nav{ align-items:center; }
+.brand{ min-width: 260px; }
+.menu{ flex: 1; justify-content:center; }
+.cta{ min-width: 180px; justify-content:flex-end; }
+
+/* Improve hero background visibility and depth */
+.hero-bg{
+  background:
+    radial-gradient(1200px 700px at 25% 35%, rgba(215,176,106,.22), transparent 60%),
+    radial-gradient(900px 520px at 85% 25%, rgba(243,208,138,.14), transparent 62%),
+    linear-gradient(180deg, rgba(6,6,12,.30), rgba(6,6,12,.86)),
+    url("../img/hero-stage.jpg") center/cover no-repeat !important;
+}
+
+/* Reduce overly dark look of whole page and add subtle noise feel */
+body{
+  background:
+    radial-gradient(circle at 18% 22%, rgba(212,175,55,0.10), transparent 40%),
+    radial-gradient(circle at 82% 72%, rgba(212,175,55,0.07), transparent 42%),
+    #06060c !important;
+}
+
+/* Buttons spacing */
+.btn{ white-space:nowrap; }
+
+/* --- V7: Logos / Institutions --- */
+.logo-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.logo-card{
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 16px 45px rgba(0,0,0,.35);
+  padding: 14px;
+  display:flex;
+  align-items:center;
+  gap: 12px;
+}
+.logo-badge{
+  width: 92px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.logo-badge img{
+  max-width: 86%;
+  max-height: 86%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,.35));
+}
+.logo-meta strong{ display:block; font-size: 14px; }
+.logo-meta span{ display:block; color: var(--muted); font-size: 13px; margin-top: 4px; line-height:1.45; }
+@media (max-width: 980px){
+  .logo-grid{ grid-template-columns: 1fr; }
+  .logo-badge{ width: 110px; height: 62px; }
 }
