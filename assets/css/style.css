@@ -288,3 +288,26 @@ nav a:hover {
 @media (max-width: 600px){
   .card img.workshop-thumb{ height: 140px; max-height:140px; }
 }
+
+
+/* --- V12 Refinement: Smaller & Elegant Workshop Thumbnails --- */
+
+.workshop-thumb{
+  width:100%;
+  max-height:120px; /* smaller */
+  object-fit:cover;
+  border-radius:6px;
+  margin-bottom:10px;
+  transition:opacity .25s ease;
+}
+
+.workshop-thumb:hover{
+  opacity:0.92; /* subtle effect instead of zoom */
+  transform:none; /* remove scale effect */
+  box-shadow:none;
+}
+
+.card{
+  padding:18px;
+}
+
