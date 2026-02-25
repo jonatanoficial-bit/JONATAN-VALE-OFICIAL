@@ -1,124 +1,98 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#07070c" />
-  <link rel="stylesheet" href="assets/css/style.css" />
-  <title>Contratar — Jonatan Vale</title>
-  <meta name="description" content="Solicite proposta para contratar Jonatan Vale como palestrante, professor e maestro." />
-
-  <meta property="og:title" content="Contratar — Jonatan Vale"/>
-  <meta property="og:description" content="Solicite proposta para contratar Jonatan Vale como palestrante, professor e maestro."/>
-  <meta property="og:type" content="website"/>
-  <meta property="og:image" content="assets/img/og-cover.jpg"/>
-</head>
-<body>
-
-<header class="topbar">
-  <div class="container nav">
-    <a class="brand" href="index.html" aria-label="Ir para início">
-      <div class="brand-mark" aria-hidden="true"></div>
-      <div>
-        <strong>Jonatan Vale</strong>
-        <small>Maestro & Palestrante • Vale Produção</small>
-      </div>
-    </a>
-
-    <nav class="menu" data-menu>
-      <a href="index.html">Início</a>
-      <a href="quem-sou.html">Quem Sou</a>
-      <a href="workshops.html">Palestras & Workshops</a>
-      <a href="masterclass.html">Masterclass</a>
-      <a href="obras.html">Produções</a>
-      <a href="contato.html">Contato</a>
-    </nav>
-
-    <div class="cta">
-      <a class="btn gold" href="contratar.html">Contratar</a>
-      <button class="hamburger" data-menu-btn aria-label="Abrir menu">☰</button>
-    </div>
-  </div>
-</header>
-<main>
-  <section class="hero" style="padding-bottom:14px;">
-    <div class="hero-bg" aria-hidden="true"></div>
-    <div class="container fade-in">
-      <div class="kicker">CONTRATAÇÃO</div>
-      <h1 class="h1">Solicitar proposta</h1>
-      <p class="lead">Preencha os dados do evento e receba a proposta (palestra, workshop, masterclass ou imersão).</p>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container split">
-      <div class="card fade-in">
-        <h3>Formatos mais comuns</h3>
-        <ul class="list">
-          <li class="li"><div class="dot"></div><div><strong>Palestra</strong><span>1h–1h30 (conteúdo + perguntas)</span></div></li>
-          <li class="li"><div class="dot"></div><div><strong>Workshop prático</strong><span>2h–4h (exercícios e demonstração)</span></div></li>
-          <li class="li"><div class="dot"></div><div><strong>Masterclass</strong><span>orientação e demonstrações avançadas</span></div></li>
-          <li class="li"><div class="dot"></div><div><strong>Imersão</strong><span>1 dia (treinamento intensivo)</span></div></li>
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contratar — Jonatan Vale</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .proposal-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: var(--surface-dark);
+        border-radius: var(--radius);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+      }
+      .benefits {
+        margin: 20px 0;
+        list-style: none;
+        padding: 0;
+      }
+      .benefits li {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        margin-bottom: 8px;
+        color: var(--secondary-text);
+      }
+      .benefits li::before {
+        content: '✓';
+        color: var(--accent-color);
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">Jonatan Vale</div>
+      <nav>
+        <ul>
+          <li><a href="index.html">Início</a></li>
+          <li><a href="quem-sou.html">Quem Sou</a></li>
+          <li><a href="workshops.html">Palestras &amp; Workshops</a></li>
+          <li><a href="masterclass.html">Masterclass</a></li>
+          <li><a href="producoes.html">Produções</a></li>
+          <li><a href="contato.html">Contato</a></li>
         </ul>
-        <div class="hr"></div>
-        <p class="note">
-          Para igrejas: é possível formato por participante (ex.: R$ 50/pessoa com R$ 5 destinados à igreja) ou valor mínimo garantido.
+      </nav>
+      <a href="contratar.html" class="button">Contratar</a>
+    </header>
+
+    <section class="section">
+      <h1>Solicitar Proposta</h1>
+      <div class="proposal-container">
+        <p style="color: var(--secondary-text); line-height: 1.6;">
+          Ao contratar os serviços de palestras, workshops ou produção musical
+          com Jonatan Vale, você garante um conteúdo de excelência técnica e
+          artística, adaptado às necessidades do seu evento, igreja ou
+          instituição. Preencha o formulário abaixo para receber uma proposta
+          personalizada ou entre em contato diretamente pelos canais
+          informados.
         </p>
-      </div>
-
-      <div class="card fade-in">
-        <h3>Formulário</h3>
-        <p class="note">Por enquanto via e-mail (mailto). No README há instruções para ativar Formspree (opcional).</p>
-        <div class="hr"></div>
-
-        <form class="form" action="mailto:sacvaleproducao@gmail.com" method="post" enctype="text/plain">
-          <label>Nome / Organização</label>
-          <input class="input" name="organizacao" required />
-
-          <label>WhatsApp</label>
-          <input class="input" name="whatsapp" required />
-
-          <label>E-mail</label>
-          <input class="input" name="email" type="email" required />
-
-          <label>Cidade/Estado</label>
-          <input class="input" name="local" required />
-
-          <label>Tipo de evento</label>
-          <select class="select" name="tipo_evento">
-            <option>Igreja / Congresso Cristão</option>
-            <option>Escola / Instituto / Conservatório</option>
-            <option>Congresso / Festival</option>
-            <option>Corporativo / Institucional</option>
-            <option>Online</option>
-          </select>
-
-          <label>Tema desejado</label>
-          <input class="input" name="tema" placeholder="Ex: Regência Coral / Piano / IA & Música" />
-
-          <label>Data prevista</label>
-          <input class="input" name="data" placeholder="dd/mm/aaaa" />
-
-          <label>Estimativa de público</label>
-          <input class="input" name="publico" placeholder="Ex: 30 pessoas" />
-
-          <label>Mensagem / detalhes</label>
-          <textarea class="textarea" name="detalhes" required></textarea>
-
-          <button class="btn gold" type="submit">Enviar solicitação</button>
+        <h2 style="color: var(--accent-color); margin-top: 20px;">Benefícios</h2>
+        <ul class="benefits">
+          <li>Conteúdo personalizado conforme público e objetivo</li>
+          <li>Material de apoio e suporte pós-evento</li>
+          <li>Equipamentos e tecnologia de ponta (quando aplicável)</li>
+          <li>Consultoria artística antes e depois da contratação</li>
+          <li>Experiência de mais de 18 anos em música e educação</li>
+        </ul>
+        <form action="mailto:jonatanoficial@gmail.com" method="post" enctype="text/plain">
+          <label for="nome">Nome</label>
+          <input type="text" id="nome" name="nome" required />
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" required />
+          <label for="evento">Tipo de Evento</label>
+          <input type="text" id="evento" name="evento" placeholder="Igreja, escola, congresso, etc." required />
+          <label for="data">Data desejada</label>
+          <input type="text" id="data" name="data" placeholder="DD/MM/AAAA" required />
+          <label for="mensagem">Mensagem / Detalhes</label>
+          <textarea id="mensagem" name="mensagem" rows="5" required></textarea>
+          <button type="submit" class="submit-btn">Enviar Solicitação</button>
         </form>
       </div>
-    </div>
-  </section>
-</main>
-<footer class="footer">
-  <div class="container row">
-    <div>© <span id="year"></span> Vale Produção — Direitos reservados.</div>
-    <div class="build" data-build></div>
-  </div>
-</footer>
-<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-<script src="assets/js/main.js"></script>
+    </section>
 
-</body>
+    <footer class="footer">
+      <p>© 2026 Vale Produção — Todos os direitos reservados.</p>
+      <p id="build">BUILD: <!-- build date inserted via JS --></p>
+    </footer>
+
+    <script src="assets/js/main.js"></script>
+  </body>
 </html>

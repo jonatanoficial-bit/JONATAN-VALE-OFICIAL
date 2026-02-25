@@ -1,103 +1,105 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#07070c" />
-  <link rel="stylesheet" href="assets/css/style.css" />
-  <title>Contato — Jonatan Vale</title>
-  <meta name="description" content="Contato para contratação de palestras e workshops com Jonatan Vale." />
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contato — Jonatan Vale</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .contact-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 20px;
+        background: var(--surface-dark);
+        border-radius: var(--radius);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      label {
+        text-align: left;
+        font-weight: 500;
+      }
+      input, textarea {
+        border: none;
+        border-radius: var(--radius);
+        padding: 12px;
+        background: var(--surface-light);
+        color: var(--text-color);
+        resize: vertical;
+      }
+      input:focus, textarea:focus {
+        outline: 2px solid var(--accent-color);
+      }
+      .submit-btn {
+        background: var(--accent-color);
+        color: #000;
+        border: none;
+        padding: 12px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+      .submit-btn:hover {
+        background: #c99a1b;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">Jonatan Vale</div>
+      <nav>
+        <ul>
+          <li><a href="index.html">Início</a></li>
+          <li><a href="quem-sou.html">Quem Sou</a></li>
+          <li><a href="workshops.html">Palestras &amp; Workshops</a></li>
+          <li><a href="masterclass.html">Masterclass</a></li>
+          <li><a href="producoes.html">Produções</a></li>
+          <li><a href="contato.html">Contato</a></li>
+        </ul>
+      </nav>
+      <a href="contratar.html" class="button">Contratar</a>
+    </header>
 
-  <meta property="og:title" content="Contato — Jonatan Vale"/>
-  <meta property="og:description" content="Contato para contratação de palestras e workshops com Jonatan Vale."/>
-  <meta property="og:type" content="website"/>
-  <meta property="og:image" content="assets/img/og-cover.jpg"/>
-</head>
-<body>
-
-<header class="topbar">
-  <div class="container nav">
-    <a class="brand" href="index.html" aria-label="Ir para início">
-      <div class="brand-mark" aria-hidden="true"></div>
-      <div>
-        <strong>Jonatan Vale</strong>
-        <small>Maestro & Palestrante • Vale Produção</small>
-      </div>
-    </a>
-
-    <nav class="menu" data-menu>
-      <a href="index.html">Início</a>
-      <a href="quem-sou.html">Quem Sou</a>
-      <a href="workshops.html">Palestras & Workshops</a>
-      <a href="masterclass.html">Masterclass</a>
-      <a href="obras.html">Produções</a>
-      <a href="contato.html">Contato</a>
-    </nav>
-
-    <div class="cta">
-      <a class="btn gold" href="contratar.html">Contratar</a>
-      <button class="hamburger" data-menu-btn aria-label="Abrir menu">☰</button>
-    </div>
-  </div>
-</header>
-<main>
-  <section class="hero" style="padding-bottom:14px;">
-    <div class="hero-bg" aria-hidden="true"></div>
-    <div class="container fade-in">
-      <div class="kicker">FALE COMIGO</div>
-      <h1 class="h1">Contato</h1>
-      <p class="lead">Atendimento para igrejas, escolas, congressos e eventos em todo o Brasil.</p>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container split">
-      <div class="card fade-in">
-        <h3>WhatsApp / Telefone</h3>
-        <p><b>(11) 96827-2371</b></p>
-        <div class="hr"></div>
-        <h3>E-mails</h3>
-        <p><b>jonatanoficial@gmail.com</b><br/><b>institutomusicalvaleadm@gmail.com</b><br/><b>sacvaleproducao@gmail.com</b><br/><b>sacvaleproducao@gmail.com</b></p>
-        <div class="hr"></div>
-        <p class="note">Para orçamento completo, use a página <b>Contratar</b>.</p>
-        <div style="margin-top:12px;">
-          <a class="btn gold" href="contratar.html">Ir para Contratar</a>
-        </div>
-      
-        <div class="hr"></div>
-        <p class="note">
-          Redes sociais:
-          <a href="https://www.instagram.com/jonatan_vale_oficial/" target="_blank" rel="noopener"><b>Instagram</b></a> •
-          <a href="https://www.facebook.com/jonatan.vale.7/" target="_blank" rel="noopener"><b>Facebook</b></a>
+    <section class="section">
+      <h1>Contato</h1>
+      <div class="contact-container">
+        <p style="color: var(--secondary-text);">
+          Entre em contato para agendar palestras, workshops, masterclasses ou
+          solicitar produções musicais. Você pode preencher o formulário abaixo
+          ou enviar um e-mail diretamente.
         </p>
-      </div>
-
-      <div class="card fade-in">
-        <h3>Mensagem rápida</h3>
-        <p class="note">Este formulário abre seu e-mail (mailto). Se quiser, posso configurar envio direto via Formspree (sem backend).</p>
-        <div class="hr"></div>
-
-        <form class="form" action="mailto:sacvaleproducao@gmail.com" method="post" enctype="text/plain">
-          <label>Nome</label>
-          <input class="input" name="nome" required />
-          <label>Cidade/Estado</label>
-          <input class="input" name="local" />
-          <label>Mensagem</label>
-          <textarea class="textarea" name="mensagem" required></textarea>
-          <button class="btn gold" type="submit">Enviar</button>
+        <p style="color: var(--secondary-text);">
+          <strong>Telefone / WhatsApp:</strong> (11) 96827-2371<br />
+          <strong>E-mails:</strong>
+          jonatanoficial@gmail.com •
+          institutomusicalvaleadm@gmail.com • sacvaleproducao@gmail.com
+        </p>
+        <form action="mailto:jonatanoficial@gmail.com" method="post" enctype="text/plain">
+          <label for="nome">Nome</label>
+          <input type="text" id="nome" name="nome" required />
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" required />
+          <label for="mensagem">Mensagem</label>
+          <textarea id="mensagem" name="mensagem" rows="5" required></textarea>
+          <button type="submit" class="submit-btn">Enviar</button>
         </form>
       </div>
-    </div>
-  </section>
-</main>
-<footer class="footer">
-  <div class="container row">
-    <div>© <span id="year"></span> Vale Produção — Direitos reservados.</div>
-    <div class="build" data-build></div>
-  </div>
-</footer>
-<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-<script src="assets/js/main.js"></script>
+    </section>
 
-</body>
+    <footer class="footer">
+      <p>© 2026 Vale Produção — Todos os direitos reservados.</p>
+      <p id="build">BUILD: <!-- build date inserted via JS --></p>
+    </footer>
+
+    <script src="assets/js/main.js"></script>
+  </body>
 </html>
