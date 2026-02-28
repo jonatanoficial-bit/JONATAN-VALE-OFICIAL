@@ -85,8 +85,9 @@ nav a:hover {
 /* Hero */
 .hero {
   position: relative;
-  height: 78vh;
-  display: flex;
+  min-height: 100vh;
+  height: auto;
+display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -94,7 +95,7 @@ nav a:hover {
     radial-gradient(1200px 700px at 25% 30%, rgba(209,168,29,.22), transparent 60%),
     radial-gradient(900px 520px at 80% 20%, rgba(209,168,29,.14), transparent 62%),
     linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.85)),
-    url('../img/hero-suit.jpg') center/cover no-repeat;
+    url('../img/hero-suit.jpg') center 18%/cover no-repeat;
 }
 
 
