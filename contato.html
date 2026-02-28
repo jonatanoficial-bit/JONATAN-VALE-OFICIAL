@@ -83,18 +83,33 @@
           jonatanoficial@gmail.com •
           institutomusicalvaleadm@gmail.com • sacvaleproducao@gmail.com
         </p>
-        <form action="mailto:jonatanoficial@gmail.com" method="post" enctype="text/plain">
+        
+        <form action="https://formsubmit.co/jonatanoficial@gmail.com" method="POST">
+          <!-- FormSubmit (gratuito). Primeira submissão pode pedir confirmação do e-mail no FormSubmit -->
+          <input type="hidden" name="_subject" value="Novo contato via site — Jonatan Vale" />
+          <input type="hidden" name="_cc" value="institutomusicalvaleadm@gmail.com,sacvaleproducao@gmail.com" />
+          <input type="hidden" name="_next" value="https://jonatanoficial-bit.github.io/JONATAN-VALE-OFICIAL/obrigado.html" />
+          <input type="hidden" name="_captcha" value="false" />
+          <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" />
+
           <label for="nome">Nome</label>
           <input type="text" id="nome" name="nome" required />
+
           <label for="email">E-mail</label>
           <input type="email" id="email" name="email" required />
-          <label for="mensagem">Mensagem</label>
+
+          <label for="mensagem">Mensagem / Detalhes</label>
           <textarea id="mensagem" name="mensagem" rows="5" required></textarea>
+
           <button type="submit" class="submit-btn">Enviar</button>
         </form>
+        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-top: 10px;">
+          *Envio gratuito via formulário. Se for sua primeira mensagem, o serviço pode solicitar confirmação por e-mail.
+        </p>
+
       </div>
     </section>
 
     <footer class="footer">
       <p>© 2026 Vale Produção — Todos os direitos reservados.</p>
-      <p id="build">BUILD: 2026-02-25 19:04:06
+      <p id="build">BUILD: 2026-02-27 14:08:37
