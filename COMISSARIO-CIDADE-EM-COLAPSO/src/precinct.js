@@ -1,35 +1,10 @@
-import { collides } from './state.js';
+import { collides,formatMoney } from './state.js';
 import { roomCatalog } from './content.js';
-
-export function precinctHTML(state, selectedRoomType = null) {
-  const selected = roomCatalog.find(room => room.type === selectedRoomType);
-  const cells = Array.from({ length: 96 }, (_, index) => {
-    const x = index % 12; const y = Math.floor(index / 12);
-    const blocked = selected ? collides(state.buildings, x, y, selected.w, selected.h) : false;
-    return `<button class="grid-cell ${selected ? (blocked ? 'blocked' : 'available') : ''}" style="--x:${x + 1};--y:${y + 1}" data-action="place-room" data-x="${x}" data-y="${y}" aria-label="Célula ${x + 1}, ${y + 1}${blocked ? ', ocupada' : ''}"></button>`;
-  }).join('');
-  const buildings = state.buildings.map(room => `
-    <div class="room room-${room.type}" style="--x:${room.x + 1};--y:${room.y + 1};--w:${room.w};--h:${room.h}" title="${room.name}">
-      <span>${room.icon || '▦'}</span><b>${room.name}</b><small>${room.status === 'active' ? 'OPERACIONAL' : room.status}</small>
-    </div>`).join('');
-  return `
-    <section class="precinct-layout">
-      <div class="precinct-sidebar glass-panel">
-        <span class="eyebrow">PLANTA ORTOGONAL 2D</span><h2>Comando Central</h2>
-        <p class="muted">Selecione um módulo e toque numa área livre. Custos e capacidades alteram a simulação.</p>
-        <div class="room-catalog">
-          ${roomCatalog.map(room => `<button class="room-card ${selectedRoomType === room.type ? 'selected' : ''}" data-action="select-room" data-room="${room.type}">
-            <span class="room-icon">${room.icon}</span><span><b>${room.name}</b><small>US$ ${room.cost.toLocaleString('pt-BR')} · ${room.w}×${room.h}</small><em>${room.benefit}</em></span>
-          </button>`).join('')}
-        </div>
-        ${selected ? `<div class="placement-tip">Posicionando <b>${selected.name}</b>. Toque numa célula verde.</div>` : '<div class="placement-tip neutral">Escolha um dos 3 módulos construíveis.</div>'}
-      </div>
-      <div class="precinct-stage">
-        <div class="precinct-meta"><span>${state.buildings.length} setores</span><span>${state.garageCapacity} vagas</span><span>${state.stats.rooms}/3 módulos novos</span></div>
-        <div class="precinct-grid" aria-label="Grade 12 por 8 da delegacia">
-          ${cells}${buildings}
-          <div class="corridor corridor-a"></div><div class="corridor corridor-b"></div>
-        </div>
-      </div>
-    </section>`;
+import { additionalRooms } from './campaign.js';
+import { icon } from './icons.js';
+export function precinctHTML(state,selectedRoomType=null){
+ const catalog=[...roomCatalog,...additionalRooms],selected=catalog.find(r=>r.type===selectedRoomType);
+ const cells=Array.from({length:96},(_,index)=>{const x=index%12,y=Math.floor(index/12),blocked=selected?collides(state.buildings,x,y,selected.w,selected.h):false;return `<button class="grid-cell ${selected?(blocked?'blocked':'available'):''}" style="--x:${x+1};--y:${y+1}" data-action="place-room" data-x="${x}" data-y="${y}" aria-label="Construir no setor ${x+1}, ${y+1}${blocked?', ocupado':''}"></button>`;}).join('');
+ const rooms=state.buildings.map(b=>`<div class="room room-${b.type} ${b.status} ${b.id.includes('FIX')?'fixed-room':''}" style="--x:${b.x+1};--y:${b.y+1};--w:${b.w};--h:${b.h}">${icon(['investigation','forensics'].includes(b.type)?'case':b.type==='garage'?'fleet':b.type==='maintenance'?'wrench':'precinct')}<b>${b.name}</b><small>${b.status==='active'?'OPERACIONAL':'EM OBRA'}</small></div>`).join('');
+ return `<section class="precinct-layout"><div class="precinct-controls"><h2>Expansão de setores</h2><p>Selecione um módulo, escolha a posição na grade e autorize a obra. Ativação após o prazo de construção.</p><div class="room-catalog">${catalog.map(r=>`<button class="room-card ${selected?.type===r.type?'selected':''}" data-action="select-room" data-room="${r.type}">${icon(r.type==='garage'?'fleet':r.type==='maintenance'?'wrench':'precinct')}<span><b>${r.name}</b><small>${formatMoney(r.cost)} · ${r.buildMinutes||120} min</small><em>${r.benefit}</em></span></button>`).join('')}</div></div><div class="precinct-view"><figure class="approved-plan"><img src="./assets/backgrounds/c05.webp" alt="Planta ortogonal oficial da delegacia"><figcaption>PLANTA EXISTENTE · QUARTEL-GENERAL</figcaption><span class="walking-agent agent-a"></span><span class="walking-agent agent-b"></span></figure><div class="expansion-heading"><h2>Plano de expansão</h2><span>${selected?'Posicione: '+selected.name:'Selecione um módulo para planejar'} · ${state.garageCapacity} vagas</span></div><div class="precinct-grid" aria-label="Planta de expansão em grade 12 por 8">${cells}${rooms}</div></div></section>`;
 }

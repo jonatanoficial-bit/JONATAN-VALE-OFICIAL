@@ -1,30 +1,7 @@
 {
-  "version": 1,
-  "policy": "Fallbacks programáticos identificados até o fornecimento dos arquivos individuais aprovados.",
-  "characters": {
-    "P01": { "name": "Raymond Jackson", "canonical": "characters/p01_raymond_jackson/portrait.webp", "status": "awaiting-user-file", "fallback": "CSS initials RJ" },
-    "P02": { "name": "Capitão James", "canonical": "characters/p02_capitao_james/portrait.webp", "status": "awaiting-user-file", "fallback": "CSS initials CJ" },
-    "P03": { "name": "Kevin", "canonical": "characters/p03_kevin/portrait.webp", "status": "awaiting-user-file", "fallback": "CSS initials KE" },
-    "P04": { "name": "Brithney", "canonical": "characters/p04_brithney/portrait.webp", "status": "awaiting-user-file", "fallback": "CSS initials BR" },
-    "P05": { "name": "Detetive James", "canonical": "characters/p05_detetive_james/portrait.webp", "status": "awaiting-user-file", "fallback": "CSS initials DJ" },
-    "P06": { "name": "Vice-prefeito Jackson", "canonical": "characters/p06_jackson_governo/portrait.webp", "status": "awaiting-user-file", "fallback": "CSS initials VJ" },
-    "P07": { "name": "Allan Thompson", "canonical": "characters/p07_allan_thompson/portrait.webp", "status": "awaiting-user-file", "fallback": "CSS initials AT" },
-    "P08": { "name": "Elliot Hadja", "canonical": "characters/p08_elliot_hadja/portrait.webp", "status": "awaiting-user-file", "fallback": "CSS initials EH" },
-    "P09": { "name": "Kevin Johnson", "canonical": "characters/p09_kevin_johnson/portrait.webp", "status": "awaiting-user-file", "fallback": "CSS initials KJ" },
-    "P10": { "name": "General James Brown", "canonical": "characters/p10_general_james_brown/portrait.webp", "status": "awaiting-user-file", "fallback": "CSS initials JB" },
-    "P11": { "name": "Fabiana Dias", "canonical": "characters/p11_fabiana_dias/portrait.webp", "status": "awaiting-user-file", "fallback": "CSS initials FD" },
-    "P12": { "name": "Nathaniel Cross", "canonical": "characters/p12_nathaniel_cross/portrait.webp", "status": "awaiting-user-file", "fallback": "CSS initials NC" }
-  },
-  "scenes": {
-    "C01": { "canonical": "backgrounds/c01_tela_inicial.webp", "status": "reference-in-source-doc", "fallback": "CSS cinematic city" },
-    "C02": { "canonical": "backgrounds/c02_ligacao_do_prefeito.webp", "status": "reference-in-source-doc", "fallback": "CSS mayor call" },
-    "C03": { "canonical": "backgrounds/c03_gabinete_do_comissario.webp", "status": "reference-in-source-doc", "fallback": "CSS interactive office" },
-    "C04": { "canonical": "backgrounds/c04_mapa_2d_da_cidade.webp", "status": "implemented-programmatically", "fallback": "DOM top-down city map" },
-    "C05": { "canonical": "backgrounds/c05_planta_2d_da_delegacia.webp", "status": "implemented-programmatically", "fallback": "DOM orthogonal precinct" },
-    "C06": { "canonical": "backgrounds/c06_ocorrencia_2d_ao_vivo.webp", "status": "implemented-programmatically", "fallback": "interactive operation modal" },
-    "C07": { "canonical": "backgrounds/c07_quadro_de_investigacao.webp", "status": "implemented-programmatically", "fallback": "DOM/SVG evidence board" },
-    "C08": { "canonical": "backgrounds/c08_frota_e_compras.webp", "status": "implemented-programmatically", "fallback": "CSS fleet catalog" },
-    "C09": { "canonical": "backgrounds/c09_crise_urbana_centro_de_comando.webp", "status": "reference-in-source-doc", "fallback": "stateful report UI" },
-    "C10": { "canonical": "backgrounds/c10_evolucao_fim_de_capitulo.webp", "status": "reference-in-source-doc", "fallback": "stateful chapter report" }
-  }
+  "version": "0.2.0",
+  "imageManifest": "../../assets/manifest.json",
+  "portraitMapping": "../../src/art.js",
+  "included": "5 fundos limpos e 10 composições C01–C10",
+  "portraitStatus": "P01–P12 representados por detalhes das composições; arquivos individuais canônicos ausentes"
 }

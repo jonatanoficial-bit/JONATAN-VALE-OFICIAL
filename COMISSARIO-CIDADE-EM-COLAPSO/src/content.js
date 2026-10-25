@@ -1,5 +1,5 @@
-export const VERSION = '0.1.0';
-export const BUILD = 'lote1-2026.10.25';
+export const VERSION = '0.2.0';
+export const BUILD = 'lote2-2026.10.25';
 
 export const people = [
   { id: 'P01', name: 'Raymond Jackson', short: 'Raymond', role: 'Comissário da NYPD', institution: 'NYPD', access: 'Você', initials: 'RJ', tone: 'gold' },

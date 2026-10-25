@@ -1,26 +1,11 @@
-# Auditoria do Lote 1
+# Auditoria — Parte 2 / v0.2.0
 
-## Gates implementados
+Verificação em 25/10/2026: `npm run check` passou; 8 testes de lógica passaram (`npm test`). Os 15 arquivos de imagem locais foram encontrados. A execução de Chromium foi bloqueada pelas restrições do ambiente; fluxo visual, Android, instalação PWA e GitHub Pages ainda não foram verificados em navegador nesta entrega.
 
-- G1: aplicação estática sem backend, caminhos relativos e service worker.
-- G2: prólogo ramificado chega ao gabinete e grava flags.
-- G3: 12 contatos funcionais; efeitos persistentes são aplicados uma única vez.
-- G4: compra e contratação afetam caixa, folha, manutenção e ativos.
-- G5: mapa ortogonal permite pan/zoom/pinça, seleção, despacho, ETA e progresso visual.
-- G6: grade ortogonal permite posicionar investigação, despacho e garagem com custo e colisão.
-- G7: incidentes e Arquivo Ponte alteram KPIs e journal.
-- G8: sete dias geram eventos determinísticos dentre seis categorias.
-- G9: IndexedDB mantém frota, pessoal, salas, relações, incidentes e RNG; localStorage é fallback.
-- G10: layout responsivo, alvos mínimos de 44 px, sem dependência de orientação.
+Implementado: fundos fotográficos originais C01–C05; referências C01–C10; telefone com 12 personagens visíveis; sete arcos com escolhas persistentes; rotas e ETA; entregas de frota, manutenção, construção temporizada, investigação com tarefas/evidências, contratação, descanso, treinamento, apoio estadual/federal condicionado; migração de saves v1.
 
-## Limitações declaradas
+Os retratos são janelas fotográficas das composições do documento, não os 12 arquivos individuais canônicos. Esses originais não estavam anexados às fichas P01–P12; alguns detalhes têm resolução pequena. As telas C06–C10 incluem interfaces impressas e são referências: seus controles jogáveis foram feitos em HTML/SVG.
 
-- Os retratos P01–P12 não estavam disponíveis como arquivos individuais; a Bíblia manda usar fallbacks substituíveis. O manifest registra todos os caminhos canônicos.
-- As artes C01–C10 incorporadas no Google Docs são referência, não assets de distribuição separados. C04–C08 foram reconstruídos como sistemas interativos em DOM/CSS/SVG; C01–C03/C09–C10 usam cenários programáticos até a extração/entrega dos arquivos originais.
-- O Lote 1 é um vertical slice. Profundidade dos sete arcos, salas adicionais, manutenção avançada, áudio final e cooperação online pertencem aos Lotes 2–3.
+Pendências: falas e som final, tutorial ampliado, notícias/clima/saúde mais profundos, finais mais elaborados, otimização e validação real em Android, E2E e polimento completo. Não se declara qualidade AAA ou aceite integral da Bíblia. Sem Firebase/configuração online fornecida: saves são locais e exportáveis.
 
-## Segurança e privacidade
-
-- Nenhuma chave, API comercial, dado pessoal real ou backend.
-- Importação limitada a 5 MB, parseada como JSON e migrada por schema; nenhuma string é executada.
-- Personagens e autoridades narrativas são fictícios.
+Nenhum segredo, credencial ou backend incluído. Compras e autoridades são ficcionais. Outros projetos no repositório são preservados.

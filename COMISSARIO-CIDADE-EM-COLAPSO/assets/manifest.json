@@ -1,0 +1,171 @@
+{
+  "version": 2,
+  "source": "Google Docs Bíblia Mestre 1vHqY-zxuBrsa7c4oIvPXOWHZHfa1t4HatMFWVLSwUfE",
+  "images": [
+    {
+      "id": "c01",
+      "path": "assets/backgrounds/c01.webp",
+      "title": "Fundo da tela inicial",
+      "reference": false,
+      "sourceFileId": "file_000000009e04820e8b3937e0b21a1ac4",
+      "width": 1672,
+      "height": 941,
+      "bytes": 258720,
+      "sha256": "9f0dd1b5ba2a2c032e2f80c250d77a7fff7a0cf4e56a3387cdb2e43bd9f5536e"
+    },
+    {
+      "id": "ref-c01",
+      "path": "assets/references/c01.webp",
+      "title": "Tela inicial",
+      "reference": true,
+      "sourceFileId": "file_000000002d50820eb7791f82b04241cf",
+      "width": 1672,
+      "height": 941,
+      "bytes": 297436,
+      "sha256": "b5a66c10cd83d04605c3a9113e7c9a4ac346c1041117aa203223156a6e470cd6"
+    },
+    {
+      "id": "c02",
+      "path": "assets/backgrounds/c02.webp",
+      "title": "Ligação do prefeito",
+      "reference": false,
+      "sourceFileId": "file_000000009178820ea03da44e562536d2",
+      "width": 1672,
+      "height": 941,
+      "bytes": 278722,
+      "sha256": "c4cd6207c092f184626fb5d9ad1655e02e2ae65174e10ce0b28fffeb5b4d4fcd"
+    },
+    {
+      "id": "ref-c02",
+      "path": "assets/references/c02.webp",
+      "title": "Ligação do prefeito",
+      "reference": true,
+      "sourceFileId": "file_000000005ca4820ea56a3876f1aa7065",
+      "width": 1672,
+      "height": 941,
+      "bytes": 256104,
+      "sha256": "b15919ebbbd00b667adc23547acf61de3907dbc025a4617c305ecec09cedfbf5"
+    },
+    {
+      "id": "c03",
+      "path": "assets/backgrounds/c03.webp",
+      "title": "Gabinete do comissário",
+      "reference": false,
+      "sourceFileId": "file_00000000d608820e83b2969272c665bf",
+      "width": 1672,
+      "height": 941,
+      "bytes": 382062,
+      "sha256": "c129b81059f917ec3693366e998dc0d44df46c15f68a24844c230be566da94e7"
+    },
+    {
+      "id": "ref-c03",
+      "path": "assets/references/c03.webp",
+      "title": "Gabinete com equipe",
+      "reference": true,
+      "sourceFileId": "file_000000004eac820ea3fc101764587398",
+      "width": 1672,
+      "height": 941,
+      "bytes": 343712,
+      "sha256": "c07964d9240a392c72cb073379c75931c90bd3bdbbedc30692476a23dadc983e"
+    },
+    {
+      "id": "c04",
+      "path": "assets/backgrounds/c04.webp",
+      "title": "Mapa ortogonal",
+      "reference": false,
+      "sourceFileId": "file_000000006a80820e8059578a5a2633cf",
+      "width": 1672,
+      "height": 941,
+      "bytes": 612970,
+      "sha256": "635e6f2dd78474a148ddb340e0305fe391d1fcd135b8a3ee1a9238cfd1dbdce6"
+    },
+    {
+      "id": "ref-c04",
+      "path": "assets/references/c04.webp",
+      "title": "Centro de despacho",
+      "reference": true,
+      "sourceFileId": "file_00000000fea4820ea0ec38520c721c36",
+      "width": 1672,
+      "height": 941,
+      "bytes": 435008,
+      "sha256": "606c9800844c2da46dd5749d8ce14f5e54620fc8d82f3b62312c777b59b239c4"
+    },
+    {
+      "id": "c05",
+      "path": "assets/backgrounds/c05.webp",
+      "title": "Delegacia ortogonal",
+      "reference": false,
+      "sourceFileId": "file_000000002554820e9c8cb672713131bd",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 210622,
+      "sha256": "5346890056130fd6c9da2e72250d38214dafad8fb5037221bb61bfc9795b03fc"
+    },
+    {
+      "id": "ref-c05",
+      "path": "assets/references/c05.webp",
+      "title": "Delegacia construída",
+      "reference": true,
+      "sourceFileId": "file_00000000d88c820e96aa85ecda53392e",
+      "width": 1672,
+      "height": 941,
+      "bytes": 364028,
+      "sha256": "67df9df4072e865963c96431aa492d6fa693afe009bb1ea4dd951a5b19ea2ed1"
+    },
+    {
+      "id": "ref-c06",
+      "path": "assets/references/c06.webp",
+      "title": "Operação 2D",
+      "reference": true,
+      "sourceFileId": "file_00000000a4f8820e922b63247a7a60e3",
+      "width": 1672,
+      "height": 941,
+      "bytes": 419332,
+      "sha256": "3a4825960dc01845abafec140a2bf32e973d89569f937e6d7f82584ef8863fcd"
+    },
+    {
+      "id": "ref-c07",
+      "path": "assets/references/c07.webp",
+      "title": "Investigação",
+      "reference": true,
+      "sourceFileId": "file_000000003010820eb6819676f257e251",
+      "width": 1672,
+      "height": 941,
+      "bytes": 342898,
+      "sha256": "7492daf7ec625b8ffeacbfa9295b73b033436aec6603bd4eefb6b571013c0452"
+    },
+    {
+      "id": "ref-c08",
+      "path": "assets/references/c08.webp",
+      "title": "Garagem e frota",
+      "reference": true,
+      "sourceFileId": "file_0000000077e4820e9ce7d9dd9ceefff8",
+      "width": 1672,
+      "height": 941,
+      "bytes": 339838,
+      "sha256": "489b7d603234f973cecca5b72329158d89b09db7bfd65f37512d709424853325"
+    },
+    {
+      "id": "ref-c09",
+      "path": "assets/references/c09.webp",
+      "title": "Cúpula estadual",
+      "reference": true,
+      "sourceFileId": "file_00000000ca60820e8a57597288e72a46",
+      "width": 1672,
+      "height": 941,
+      "bytes": 329070,
+      "sha256": "3930fb1fbb19a4c2a86d5410a8ddb41a81227eca100d9cdb864d3fa5f013c110"
+    },
+    {
+      "id": "ref-c10",
+      "path": "assets/references/c10.webp",
+      "title": "Cooperação federal",
+      "reference": true,
+      "sourceFileId": "file_0000000037bc820e9c885c97db869744",
+      "width": 1672,
+      "height": 941,
+      "bytes": 330640,
+      "sha256": "a1e59dd7aafaf0dc746d40e62d49f82e9ee5b954771aa7995de1424385546082"
+    }
+  ]
+}

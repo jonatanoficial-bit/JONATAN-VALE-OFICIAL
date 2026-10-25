@@ -1,226 +1,111 @@
-import { BUILD, VERSION, candidates, eventTemplates, newsByDay, openingChoices, people, phoneTopics, vehiclesCatalog } from './content.js';
+import { VERSION, BUILD, people, openingChoices, vehiclesCatalog, roomCatalog, eventTemplates } from './content.js';
+import { chapters, currentChapter, pendingChapter, caseTasks, additionalRooms, resolutionLabel } from './campaign.js';
+import { portrait, artGallery } from './art.js';
+import { icon } from './icons.js';
+import { topics, topicRestriction } from './phone.js';
 import { formatMoney } from './state.js';
-import { formatGameTime } from './sim.js';
+import { formatGameTime, worldTime } from './sim.js';
 import { cityMapHTML } from './map.js';
 import { precinctHTML } from './precinct.js';
+import { e, button, badge, header, meter, stageName, sceneDetail, empty } from './view-helpers.js';
 
-const escapeHtml = value => String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+const person=id=>people.find(p=>p.id===id)||people[0];
+const money=formatMoney;
+const navItems=[['office','office','Gabinete'],['map','map','Centro de despacho'],['phone','phone','Telefone e contatos'],['precinct','precinct','Delegacia'],['fleet','fleet','Frota e orçamento'],['staff','staff','Efetivo e turnos'],['case','case','Investigações'],['campaign','briefcase','Campanha e crises'],['report','report','Relatórios'],['gallery','image','Artes da Bíblia']];
+const spent=s=>s.finance.payroll+s.finance.operations+s.finance.maintenance+s.finance.buildings+s.finance.forensics;
 
-function portrait(person, size = 'large') {
-  return `<div class="portrait portrait-${size} tone-${person.tone}" role="img" aria-label="Retrato provisório identificado de ${person.name}">
-    <span>${person.initials}</span><small>${person.id}</small>
-  </div>`;
+function title(s,ui){
+ return `<main class="title-screen"><div class="title-image" role="img" aria-label="Raymond Jackson observa Nova York sob chuva"></div><div class="title-shade"></div><div class="title-top"><span class="studio-wordmark">VALE <b>GAMES</b></span><span class="edition-label">EDIÇÃO DE DESENVOLVIMENTO · PARTE 2</span></div>
+ <section class="title-content"><span class="eyebrow">UMA CIDADE. MILHÕES DE VIDAS. UMA DECISÃO.</span><h1>COMISSÁRIO</h1><h2>CIDADE EM COLAPSO</h2><span class="title-rule"></span><p>O comando é seu.<br>As consequências também.</p><div class="title-actions">${button('Iniciar campanha '+icon('arrow'),'new-game')}${button('Continuar gestão','continue',ui.hasSave?'':'disabled','secondary')}${button('Carregar campanha','open-saves','','text')}${button(icon('settings')+' Configurações','navigate','data-screen="settings"','text')}${button(icon('image')+' Conhecer as artes','navigate','data-screen="gallery"','text')}</div></section>
+ <div class="title-bottom"><span>RAYMOND JACKSON <small>COMISSÁRIO · NYPD</small></span><span>v${VERSION} · ${BUILD}</span></div></main>`;
 }
-
-function kpi(label, value, trend = '') {
-  return `<div class="kpi"><span>${label}</span><b>${value}</b>${trend ? `<small>${trend}</small>` : ''}</div>`;
+function intro(s){
+ const choices=s.storyStage==='second-call'?[{id:'conditional',title:'Aceitar com autonomia documentada',detail:'Prestar contas em 72 horas'}]:openingChoices;
+ return `<main class="intro-screen"><div class="intro-image"></div><div class="intro-gradient"></div><header class="cinema-header"><span>CAPÍTULO ZERO</span><b>A LIGAÇÃO</b><span>02:17 · NOVA YORK</span></header>
+ <section class="intro-panel"><span class="eyebrow">CHAMADA INSTITUCIONAL · PREFEITURA</span><div class="caller-id">${portrait(people[6],'medium')}<div><h1>Allan Thompson</h1><p>Prefeito de Nova York</p>${badge('Linha segura','green')}</div></div>
+ <blockquote>“${s.storyStage==='second-call'?'A cidade não tem tempo para um impasse. Aceite com autonomia documentada e apresente seu plano em 72 horas.':'Raymond? Sei que é tarde. A cidade precisa de alguém que não negocie princípios por manchetes. Aceite meu convite. Amanhã, o gabinete é seu.'}”</blockquote>
+ <div class="raymond-answer">${portrait(people[0],'small')}<p><b>RAYMOND JACKSON</b>“Preciso de autonomia operacional e números reais.”</p></div>
+ <h2>Em quais condições você aceita?</h2><div class="opening-choices">${choices.map((c,i)=>button(`<span class="choice-number">0${i+1}</span><span><b>${e(c.title)}</b><small>${e(c.detail)}</small></span>${icon('arrow')}`,c.id==='conditional'?'accept-second-call':'opening-choice',`data-choice="${c.id}"`,'choice')).join('')}</div><p class="cinema-note">Sua resposta altera o pacto inicial, os recursos e as relações.</p></section></main>`;
 }
-
-function titleScreen(state, hasSave) {
-  return `<main class="title-screen screen-enter">
-    <div class="city-silhouette" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-    <section class="title-copy">
-      <div class="brand-lockup"><span class="seal">VG</span><span>VALE GAMES APRESENTA</span></div>
-      <p class="eyebrow red">UMA CIDADE. MILHÕES DE VIDAS. UMA DECISÃO.</p>
-      <h1>COMISSÁRIO</h1><h2>CIDADE EM COLAPSO</h2>
-      <p class="title-lead">Assuma o comando. Proteja civis. Reconstrua uma instituição — e arque com cada consequência.</p>
-      <nav class="title-menu" aria-label="Menu principal">
-        <button class="primary-button cinematic" data-action="new-game"><span>NOVO JOGO</span><small>Capítulo Zero · A Ligação</small></button>
-        <button class="secondary-button" data-action="continue" ${hasSave ? '' : 'disabled'}>CONTINUAR</button>
-        <button class="secondary-button" data-action="open-saves">CARREGAR / GERENCIAR SAVES</button>
-        <button class="text-button" data-action="navigate" data-screen="settings">Configurações e acessibilidade</button>
-      </nav>
-      <p class="fiction-note">Obra de ficção. Autoridades e acontecimentos narrativos são fictícios.</p>
-    </section>
-    <aside class="commissioner-hero" aria-label="Raymond Jackson, comissário">
-      <div class="hero-aura"></div><div class="hero-uniform"><span>RAYMOND<br>JACKSON</span><i></i></div>
-    </aside>
-    <footer>PARTE 1 · LOTE 1 JOGÁVEL <span>v${VERSION} · ${BUILD}</span></footer>
-  </main>`;
+function sidebar(s){
+ return `<aside class="sidebar"><button class="side-brand" data-action="navigate" data-screen="office">${icon('shield')}<span>COMISSÁRIO<small>CIDADE EM COLAPSO</small></span></button><div class="command-label">COMANDO MUNICIPAL <span>NOVA YORK</span></div><nav aria-label="Navegação principal">${navItems.map(([screen,i,label])=>`<button class="nav-item ${s.screen===screen?'active':''}" data-action="navigate" data-screen="${screen}" ${s.screen===screen?'aria-current="page"':''}>${icon(i)}<span>${label}</span>${screen==='map'&&s.activeIncidents.length?`<em>${s.activeIncidents.length}</em>`:''}</button>`).join('')}</nav><div class="side-footer"><button data-action="open-saves">${icon('save')} Salvar e carregar</button><button data-action="navigate" data-screen="settings">${icon('settings')} Preferências</button><span>VALE GAMES · v${VERSION}</span></div></aside>`;
 }
-
-function introScreen(state) {
-  if (state.storyStage === 'second-call') return `<main class="cinematic-screen screen-enter">
-    <div class="cinema-bars top"></div><div class="cinema-bars bottom"></div>
-    <section class="call-stage"><div class="call-portrait mayor">${portrait(people[6])}<span class="signal-ring"></span></div>
-      <div class="dialogue-card"><span class="speaker">ALLAN THOMPSON · 02:26</span><p>“Raymond, a cidade não tem tempo para um impasse. Aceite com autonomia documentada e apresente seu plano em 72 horas.”</p>
-        <div class="choice-list"><button class="choice-button" data-action="accept-second-call"><b>Aceitar sob condição</b><span>Autonomia registrada · confiança do prefeito −4</span></button>
-        <button class="choice-button danger" data-action="restart"><b>Encerrar a ligação</b><span>Final rápido: Convite recusado</span></button></div>
-      </div>
-    </section></main>`;
-  if (state.storyStage === 'ringing') return `<main class="cinematic-screen screen-enter">
-    <div class="cinema-bars top"></div><div class="cinema-bars bottom"></div>
-    <div class="rain-window" aria-hidden="true"></div>
-    <section class="call-stage">
-      <div class="call-portrait mayor">${portrait(people[6])}<span class="signal-ring"></span></div>
-      <div class="dialogue-card"><span class="speaker">ALLAN THOMPSON · PREFEITO</span>
-        <p>“Raymond? Aqui é Allan Thompson. Sei que é tarde. O departamento perdeu o controle de vários distritos. A cidade precisa de alguém que não negocie princípios por manchetes.”</p>
-        <blockquote>RAYMOND — “Não vou aceitar um cargo para servir de rosto de uma crise. Preciso de autonomia operacional e números reais.”</blockquote>
-        <h3>Qual é a sua condição?</h3>
-        <div class="choice-list">${openingChoices.map((choice, index) => `<button class="choice-button" data-action="opening-choice" data-choice="${choice.id}"><span class="choice-key">${String.fromCharCode(65 + index)}</span><b>${choice.title}</b><small>${choice.detail}</small></button>`).join('')}</div>
-      </div>
-    </section>
-    <button class="skip-cinema" data-action="skip-intro">Pular cena</button>
-  </main>`;
-  return `<main class="cinematic-screen opening screen-enter">
-    <div class="cinema-bars top"></div><div class="cinema-bars bottom"></div>
-    <div class="opening-montage"><div class="scanlines"></div><span class="news-tag">TRANSMISSÃO DE EMERGÊNCIA · 02:17</span>
-      <h1>UMA CIDADE.</h1><h1>MILHÕES DE VIDAS.</h1><h1 class="red">UMA DECISÃO.</h1>
-      <div class="opening-status"><span>METRÔ PARALISADO</span><span>HOSPITAIS 87%</span><span>5 DISTRITOS EM ALERTA</span></div>
-    </div>
-    <button class="answer-call" data-action="begin-call"><span class="phone-glyph">☎</span><span><small>CHAMADA SEGURA</small>ATENDER ALLAN THOMPSON</span></button>
-    <button class="skip-cinema" data-action="skip-intro">Pular para a decisão</button>
-  </main>`;
+function hud(s){
+ return `<header class="top-hud"><div class="hud-identity">${portrait(people[0],'tiny')}<div><b>Raymond Jackson</b><small>COMISSÁRIO · NYPD</small></div></div><div class="hud-finance"><span>CAIXA DISPONÍVEL</span><b>${money(s.finance.cash)}</b></div><div class="world-clock"><b>${formatGameTime(s)}</b><small>${currentChapter(s).title}</small></div><div class="time-controls" aria-label="Velocidade da simulação">${[0,1,3,6].map(v=>`<button class="${s.speed===v?'active':''}" data-action="set-speed" data-speed="${v}" aria-label="${v?'Velocidade '+v:'Pausar'}">${v?v+'×':icon('pause')}</button>`).join('')}</div><button class="icon-button" data-action="quick-save" aria-label="Salvar agora">${icon('save')}</button></header>`;
 }
-
-function officeScreen(state) {
-  const pending = state.activeIncidents.length;
-  return `<section class="office-screen screen-enter">
-    <div class="office-backdrop"><div class="office-window"><span></span></div><div class="desk"><i></i></div></div>
-    <div class="mission-banner"><span class="eyebrow">OBJETIVO ATUAL</span><b>${escapeHtml(state.objective)}</b><small>${state.day < 3 ? `${Math.max(0, 72 - state.day * 24)}h restantes no plano inicial` : 'Balanço da primeira semana em andamento'}</small></div>
-    <div class="office-hotspots" aria-label="Gabinete interativo">
-      <button class="hotspot phone" data-action="navigate" data-screen="phone"><span>☎</span><b>Telefone</b><small>${state.phoneLog.length} chamadas</small></button>
-      <button class="hotspot map" data-action="navigate" data-screen="map"><span>⌖</span><b>Mapa</b><small>${pending} ocorrências</small></button>
-      <button class="hotspot finance" data-action="navigate" data-screen="fleet"><span>$</span><b>Frota & Finanças</b><small>${formatMoney(state.finance.cash)}</small></button>
-      <button class="hotspot case" data-action="navigate" data-screen="case"><span>⌕</span><b>Arquivo Ponte</b><small>${state.caseFile.progress}% analisado</small></button>
-      <button class="hotspot precinct" data-action="navigate" data-screen="precinct"><span>▦</span><b>Delegacia</b><small>${state.stats.rooms}/3 novas salas</small></button>
-    </div>
-    <aside class="briefing-stack">
-      <div class="npc-card urgent">${portrait(people[3], 'small')}<div><span class="eyebrow">BRITHNEY</span><b>“Comissário, três decisões não podem esperar.”</b><button data-action="navigate" data-screen="report">Abrir briefing</button></div></div>
-      <div class="news-ticker"><span>NYC // AGORA</span><p>${newsByDay[Math.min(state.day, newsByDay.length - 1)]}</p></div>
-    </aside>
-  </section>`;
+function office(s){
+ const pending=pendingChapter(s);
+ return `<section class="office-scene"><div class="office-art"></div><div class="office-shade"></div><div class="office-caption"><span class="eyebrow">QUARTEL-GENERAL · MANHATTAN</span><h1>A cidade está<br>à sua espera.</h1><p>${e(s.objective)}</p>${button('Abrir centro de despacho '+icon('arrow'),'navigate','data-screen="map"')}</div>
+ <div class="commissioner-presence">${portrait(people[0],'hero')}<div><span>COMISSÁRIO</span><b>Raymond Jackson</b></div></div>
+ <aside class="office-briefing"><span class="eyebrow">NA SUA MESA</span><h2>${pending?'Uma decisão de liderança.':'O próximo movimento.'}</h2><p>${pending?pending.summary:'As chefias aguardam suas prioridades para o próximo turno.'}</p>${button(pending?'Examinar briefing':'Revisar relatórios','navigate',`data-screen="${pending?'campaign':'report'}"`,'secondary')}<div class="briefing-status"><span>${s.activeIncidents.length} ocorrências ativas</span><span>${s.promises.filter(p=>!p.done).length} compromissos pendentes</span></div></aside>
+ <div class="object-actions"><button data-action="navigate" data-screen="phone">${icon('phone')} Telefone</button><button data-action="navigate" data-screen="case">${icon('case')} Pasta de investigação</button><button data-action="navigate" data-screen="precinct">${icon('precinct')} Delegacia</button></div></section>
+ <section class="office-lower"><div class="section-title"><span class="eyebrow">PESSOAS, NÃO APENAS RECURSOS</span><h2>Seu comando.</h2></div><div class="command-people">${['P04','P02','P05','P03'].map(id=>`<button class="command-person" data-action="select-contact" data-id="${id}">${portrait(person(id),'card')}<div><span>${e(person(id).institution)}</span><b>${e(person(id).name)}</b><small>${e(person(id).role)}</small></div>${icon('arrow')}</button>`).join('')}</div><div class="office-metrics">${meter('Confiança pública',s.city.trust)}${meter('Segurança da cidade',s.city.security)}${meter('Integridade institucional',s.city.integrity,'gold')}${meter('Moral do efetivo',s.city.morale,'green')}</div></section>`;
 }
-
-function phoneScreen(state) {
-  return `<section class="phone-screen screen-enter">
-    <header class="section-heading"><div><span class="eyebrow">LINHA INSTITUCIONAL SEGURA</span><h1>Telefone e contatos</h1><p>Assuntos estruturados. Jurisdição, confiança e consequências são persistentes.</p></div><div class="phone-summary"><b>${state.stats.calls}</b><span>chamadas feitas</span></div></header>
-    <div class="contact-grid">${people.map(person => {
-      const relation = state.contacts[person.id]; const topic = phoneTopics[person.id];
-      const gated = person.id === 'P11' && !state.flags.federalBriefed;
-      return `<article class="contact-card ${gated ? 'restricted' : ''}">${portrait(person, 'small')}<div class="contact-copy"><span class="institution">${person.institution}</span><h3>${person.name}</h3><p>${person.role}</p>
-        <div class="relation-bar"><i style="width:${relation.trust}%"></i></div><small>Confiança ${relation.trust} · ${person.access}</small></div>
-        <button class="call-button" data-action="phone-call" data-person="${person.id}" ${person.id === 'P01' ? '' : ''}>${gated ? 'Enviar informe' : 'Ligar'}<small>${topic.label}</small></button></article>`;
-    }).join('')}</div>
-    ${state.phoneLog.length ? `<div class="history-panel glass-panel"><h2>Histórico recente</h2>${state.phoneLog.slice(0, 5).map(call => `<p><b>${people.find(p => p.id === call.personId)?.name}</b><span>D${call.day + 1}</span>${call.result}</p>`).join('')}</div>` : ''}
-  </section>`;
+function phone(s,ui){
+ const p=person(ui.selectedContact||'P04'),relation=s.contacts[p.id];
+ return `${header('LINHAS INSTITUCIONAIS','Pessoas que movem a cidade.','Relações, compromissos e decisões que continuam depois da ligação.')}<section class="phone-workspace"><div class="contact-list" aria-label="Contatos">${people.map(p=>`<button class="contact-row ${(ui.selectedContact||'P04')===p.id?'selected':''}" data-action="select-contact" data-id="${p.id}">${portrait(p,'small')}<span><b>${e(p.name)}</b><small>${e(p.institution)}</small></span>${icon('arrow')}</button>`).join('')}</div><div class="contact-detail"><div class="contact-hero">${portrait(p,'dossier')}<div><span class="eyebrow">${e(p.institution)}</span><h2>${e(p.name)}</h2><p>${e(p.role)}</p>${badge(p.access,'blue')}${meter('Confiança institucional',relation.trust)}</div></div><h3 class="subheading">Pautas disponíveis</h3><div class="topic-list">${topics[p.id].map(t=>{const reason=topicRestriction(s,t),done=s.phoneLog.some(c=>c.personId===p.id&&c.topic===t.id);return `<button class="topic-card" data-action="phone-call" data-person="${p.id}" data-topic="${t.id}" ${reason?'title="'+e(reason)+'"':''}><div><b>${e(t.title)}</b><span>${e(reason||t.description)}</span></div>${done?badge('Registrado','green'):reason?badge('Via institucional'):icon('phone')}</button>`;}).join('')}</div><div class="call-history"><h3 class="subheading">Memória das conversas</h3>${s.phoneLog.filter(c=>c.personId===p.id).slice(0,4).map(c=>`<article><span>DIA ${c.day+1}</span><p>${e(c.result)}</p></article>`).join('')||'<p class="muted">Nenhuma conversa registrada com este contato.</p>'}</div></div></section>`;
 }
-
-function mapScreen(state) {
-  return `<section class="operations-screen screen-enter">${cityMapHTML(state)}
-    <aside class="incident-rail"><div class="rail-title"><span class="pulse-dot"></span><b>OCORRÊNCIAS ATIVAS</b><em>${state.activeIncidents.length}</em></div>
-      ${state.activeIncidents.length ? state.activeIncidents.map(incident => {
-        const district = state.city.districts.find(d => d.id === incident.districtId);
-        return `<button class="incident-list-item" data-action="open-incident" data-id="${incident.id}"><span class="severity-block">${incident.severity}</span><span><b>${incident.title}</b><small>${district?.name} · ${incident.stage === 'pending' ? 'aguardando' : incident.stage === 'enroute' ? `a caminho ${Math.round(incident.progress)}%` : 'no local'}</small></span></button>`;
-      }).join('') : '<div class="empty-state">Nenhuma ocorrência ativa.<button data-action="spawn-incident">Gerar chamada de teste</button></div>'}
-      <div class="unit-summary"><b>${state.fleet.filter(v => v.status === 'available').length}</b><span>viaturas disponíveis</span></div>
-    </aside>
-  </section>`;
+function operations(s){
+ return `${header('OPERAÇÕES EM TEMPO REAL','Centro de despacho.','Selecione uma ocorrência. Despache uma unidade e acompanhe a rota.',button(icon('clock')+' Avançar 30 minutos','advance-time','data-minutes="30"','secondary'))}<div class="operations-layout">${cityMapHTML(s)}<aside class="incident-rail"><h2>Ocorrências <span>${s.activeIncidents.length}</span></h2>${s.activeIncidents.map(i=>`<button class="incident-row" data-action="open-incident" data-id="${i.id}"><span class="severity">${i.severity}</span><span><b>${e(i.title)}</b><small>${s.city.districts.find(d=>d.id===i.districtId)?.name}</small>${badge(stageName[i.stage],i.stage==='onscene'?'green':i.stage==='pending'?'red':'blue')}</span>${icon('arrow')}</button>`).join('')||empty('Central em observação','O próximo boletim será emitido com o avanço do turno.')}<div class="rail-units"><span class="eyebrow">DISPONIBILIDADE</span><b>${s.fleet.filter(v=>v.status==='available').length} <small>viaturas prontas</small></b><p>Rotas seguem os corredores e pontes do mapa autoral. Congestionamento altera o ETA.</p></div></aside></div>`;
 }
-
-function fleetScreen(state) {
-  const committed = state.finance.payroll + state.finance.operations + state.finance.maintenance + state.finance.buildings + state.finance.forensics;
-  return `<section class="management-screen screen-enter">
-    <header class="section-heading"><div><span class="eyebrow">DOTação ANUAL + CAIXA MENSAL</span><h1>Frota e orçamento</h1><p>Todo pedido cria um ativo único, reduz o caixa e aumenta custos recorrentes.</p></div></header>
-    <div class="finance-strip">${kpi('Caixa livre', formatMoney(state.finance.cash), 'uso imediato')}${kpi('Dotação anual', formatMoney(state.finance.annualBudget), 'teto aprovado')}${kpi('Compromissos/mês', formatMoney(committed), `${Math.round(committed / state.finance.monthlyRelease * 100)}% da liberação`)}</div>
-    <div class="catalog-layout"><div><h2>Catálogo institucional</h2><div class="vehicle-catalog">${vehiclesCatalog.map(item => `<article class="product-card"><div class="vehicle-art ${item.type}"><span></span><i></i></div><span class="eyebrow">CONTRATO LOCAL</span><h3>${item.name}</h3><p>Tripulação ${item.crew} · ETA-base ${item.eta} min · manutenção ${formatMoney(item.upkeep)}/mês</p><strong>${formatMoney(item.price)}</strong><button class="primary-button" data-action="purchase" data-type="${item.type}" ${state.finance.cash < item.price ? 'disabled' : ''}>Comprar e registrar</button></article>`).join('')}</div></div>
-      <aside class="fleet-inventory glass-panel"><h2>Ativos da frota <span>${state.fleet.length}/${state.garageCapacity}</span></h2>${state.fleet.map(vehicle => `<div class="asset-row"><span class="asset-icon">▰</span><span><b>${vehicle.name}</b><small>${vehicle.id} · ${vehicle.status}</small></span><em>${vehicle.condition}%</em></div>`).join('')}<button class="secondary-button wide" data-action="navigate" data-screen="precinct">Gerenciar garagem</button></aside></div>
-  </section>`;
+function fleet(s){
+ return `${header('DIRETORIA DE LOGÍSTICA','Frota e orçamento.','Planeje aquisições sem perder a capacidade de manter o departamento.')}<div class="photo-banner garage-banner">${sceneDetail('c08','250 210 1060 240','Garagem da frota aprovada pelo autor')}<div><span class="eyebrow">DIVISÃO DE FROTA</span><h2>Prontidão exige manutenção.</h2><p>${s.fleet.length} veículos · ${s.garageCapacity} vagas · ${s.fleet.filter(v=>v.status==='maintenance').length} em oficina</p></div></div>
+ <div class="finance-cards">${[['Caixa livre',money(s.finance.cash)],['Dotação anual',money(s.finance.annualBudget)],['Compromissos mensais',money(spent(s))],['Reserva emergencial',money(s.finance.emergencyReserve)]].map(([l,v])=>`<div><span>${l}</span><b>${v}</b></div>`).join('')}</div><div class="page-body"><h2>Inventário operacional</h2><div class="fleet-table">${s.fleet.map(v=>`<article><div class="vehicle-symbol">${icon('fleet')}</div><div><b>${e(v.name)}</b><small>${e(v.id)} · ${s.city.districts.find(d=>d.id===v.districtId)?.name}</small></div>${badge(stageName[v.status],v.status==='available'?'green':'neutral')}<div class="condition">${meter('Condição',v.condition,v.condition<40?'red':'blue')}</div>${button(icon('wrench')+' Manutenção','maintain-vehicle',`data-id="${v.id}" ${v.status!=='available'?'disabled':''}`,'secondary')}</article>`).join('')}</div><h2 class="spaced-title">Aquisições</h2><div class="vehicle-products">${vehiclesCatalog.map((v,i)=>`<article>${sceneDetail('c08',[[205,510,195,85],[505,507,210,88],[798,510,208,85]][i].join(' '),v.name)}<div><span class="eyebrow">CONTRATO INSTITUCIONAL</span><h3>${v.name}</h3><p>Entrega em 1h de jogo. Manutenção mensal: ${money(v.upkeep)}.</p><strong>${money(v.price)}</strong>${button('Autorizar aquisição','purchase',`data-type="${v.type}" ${s.fleet.length>=s.garageCapacity||s.finance.cash<v.price?'disabled':''}`)}${s.fleet.length>=s.garageCapacity?'<small class="muted">Amplie a garagem para adquirir outro veículo.</small>':''}</div></article>`).join('')}</div><div class="ledger"><h2>Extrato e projeção</h2><p>Liberação mensal: ${money(s.finance.monthlyRelease)} · margem prevista: ${money(s.finance.monthlyRelease-spent(s))} · obrigações em atraso: ${money(s.finance.arrears||0)}</p>${s.finance.transactions.slice(0,5).map(t=>`<div><span>D${t.day+1} · ${e(t.label)}</span><b>${money(t.amount)}</b></div>`).join('')}</div></div>`;
 }
-
-function staffScreen(state) {
-  return `<section class="management-screen screen-enter"><header class="section-heading"><div><span class="eyebrow">RECURSOS HUMANOS</span><h1>Efetivo, turnos e folha</h1><p>Contratações ocupam slots, criam custo mensal e permanecem no save.</p></div>${kpi('Folha mensal', formatMoney(state.finance.payroll), `${state.staff.length} profissionais`)}</header>
-    <div class="staff-layout"><div class="staff-roster glass-panel"><h2>Equipe ativa</h2>${state.staff.map(person => `<div class="staff-row"><span class="avatar-mini">${person.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</span><span><b>${person.name}</b><small>${person.role} · turno ${person.shift}</small></span><span class="fatigue">Fadiga <b>${person.fatigue}%</b></span><em>${person.status}</em></div>`).join('')}</div>
-      <div><h2>Mercado de trabalho</h2><div class="candidate-grid">${state.candidatePool.map(person => `<article class="candidate-card"><span class="avatar-mini">${person.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</span><h3>${person.name}</h3><p>${person.role} · turno ${person.shift}</p><div><span>Competência ${person.competence}</span><span>Ética ${person.ethics}</span></div><b>${formatMoney(person.salary)}/mês</b><button data-action="hire" data-id="${person.id}">Contratar</button></article>`).join('') || '<div class="empty-state">Todos os candidatos desta rodada foram contratados.</div>'}</div></div></div>
-  </section>`;
+function staff(s){
+ return `${header('RECURSOS HUMANOS','Uma instituição é feita de pessoas.','Administre descanso, formação e disponibilidade.',badge('Folha mensal '+money(s.finance.payroll),'blue'))}<div class="page-body"><h2>Efetivo ativo</h2><div class="staff-roster">${s.staff.map(p=>`<article><div><b>${e(p.name)}</b><small>${e(p.role)} · Turno ${e(p.shift)} · Competência ${p.competence}</small></div>${badge(stageName[p.status])}${meter('Fadiga',p.fatigue,'gold')}<div class="staff-orders">${button('Descanso','staff-order',`data-id="${p.id}" data-order="rest" ${p.status==='rest'?'disabled':''}`,'text')}${button('Treinar','staff-order',`data-id="${p.id}" data-order="train" ${s.buildings.some(b=>b.type==='training'&&b.status==='active')?'':'disabled'}`,'text')}${/investigador|analista|perícia/i.test(p.role)?button('Investigar','staff-order',`data-id="${p.id}" data-order="case"`,'text'):''}</div></article>`).join('')}</div><h2 class="spaced-title">Candidatos avaliados</h2><div class="candidate-grid">${s.candidatePool.map(p=>`<article><span class="eyebrow">${e(p.role)}</span><h3>${e(p.name)}</h3><p>Competência ${p.competence} · Ética ${p.ethics} · Turno ${p.shift}</p><b>${money(p.salary)} <small>/ mês</small></b><small>Recrutamento: ${money(p.salary*.25)}</small>${button('Contratar','hire',`data-id="${p.id}"`,'secondary')}</article>`).join('')||empty('Rodada concluída','Todos os candidatos desta rodada já fazem parte do efetivo.')}</div></div>`;
 }
-
-function caseScreen(state) {
-  const caseFile = state.caseFile;
-  return `<section class="case-screen screen-enter"><header class="section-heading"><div><span class="eyebrow">INVESTIGAÇÃO · ${caseFile.id}</span><h1>${caseFile.title}</h1><p>Roubo de remessas seguido do desaparecimento de uma testemunha. Não conclua sem evidência.</p></div><div class="case-progress"><b>${caseFile.progress}%</b><span>${caseFile.state === 'open' ? 'EM ANÁLISE' : 'PRONTO PARA REVISÃO'}</span></div></header>
-    <div class="evidence-board"><svg aria-hidden="true"><line x1="20%" y1="35%" x2="50%" y2="55%"/><line x1="50%" y1="55%" x2="79%" y2="30%"/></svg>${caseFile.evidence.map((evidence, index) => `<article class="evidence-card pos-${index} ${evidence.found ? '' : 'locked'}"><span>E${index + 1}</span><h3>${evidence.found ? evidence.title : 'PISTA NÃO VERIFICADA'}</h3><p>${evidence.found ? `Confiança ${evidence.confidence}% · cadeia registrada` : 'Exige equipe e diligência legal.'}</p></article>`).join('')}<div class="hypothesis-card"><span>HIPÓTESE ATUAL</span><b>${caseFile.hypothesis}</b><small>Alternativa: fraude interna ainda não descartada</small></div></div>
-    <div class="case-actions"><button data-action="case-action" data-kind="review"><b>Revisar câmeras</b><span>+14% · US$ 0 · 4h</span></button><button data-action="case-action" data-kind="forensics"><b>Contratar perícia externa</b><span>+22% · US$ 18.000</span></button><button data-action="case-action" data-kind="interview"><b>Entrevistar equipe do depósito</b><span>+17% · procedimento documentado</span></button></div>
-  </section>`;
+function investigation(s){
+ return `${header('DIRETORIA DE INVESTIGAÇÕES','Arquivo Ponte.','Remessas roubadas. Uma testemunha ausente. Um contrato que não fecha.')}<div class="case-layout"><aside class="case-command">${portrait(people[4],'dossier')}<div><span class="eyebrow">CHEFIA DO CASO</span><h2>Detetive James</h2><p>“Hipóteses precisam explicar todas as provas.”</p>${meter('Análise consolidada',s.caseFile.progress,'gold')}${badge(s.caseFile.state==='reviewed'?'Encaminhado com fundamento':'Investigação aberta',s.caseFile.state==='reviewed'?'green':'blue')}<p>${s.caseFile.assignedDetectives.length} profissionais designados</p></div></aside><div class="case-content"><div class="evidence-board"><svg class="evidence-links" viewBox="0 0 1000 380" preserveAspectRatio="none"><path d="M155 120 490 230 800 100"/></svg>${s.caseFile.evidence.map((p,i)=>`<article class="evidence-card ev-${i} ${p.found?'':'locked'}"><span class="document-tag">PROVA 0${i+1}</span>${sceneDetail('c07',[[350,344,197,110],[592,336,123,101],[574,648,129,112]][i].join(' '),'Registro de evidência')}<h3>${p.found?e(p.title):'Em verificação'}</h3><small>${p.found?'Origem registrada · confiança '+p.confidence+'%':'Aguardando diligência'}</small></article>`).join('')}</div><h2>Diligências legais</h2><div class="case-task-grid">${caseTasks.map(t=>{const current=s.caseQueue.find(q=>q.id===t.id),done=s.caseFile.actions.includes(t.id),remaining=current?Math.max(0,current.finishesAt-worldTime(s)):0;return `<article><div><b>${t.title}</b><p>${t.description}</p><small>${done?'Laudo anexado':current?'Em andamento · '+remaining+' min restantes':t.duration+' min · '+money(t.cost)}</small></div>${button(done?icon('check'):current?icon('clock'):'Autorizar','case-task',`data-id="${t.id}" ${current||done?'disabled':''}`,'secondary')}</article>`;}).join('')}</div><div class="hypothesis-panel"><h2>Revisão de hipótese</h2><p>Provas suficientes permitem encaminhamento. A revisão exige análise mínima de 90%.</p>${button('Fraude interna ligada às remessas','case-hypothesis',`data-hypothesis="internal" ${s.caseFile.progress<90||s.caseFile.state==='reviewed'?'disabled':''}`)}${button('Concluir apenas por roubo externo','case-hypothesis',`data-hypothesis="external" ${s.caseFile.progress<90||s.caseFile.state==='reviewed'?'disabled':''}`,'secondary')}</div></div></div>`;
 }
-
-function reportScreen(state) {
-  const goal = Math.min(7, state.day + 1);
-  return `<section class="report-screen screen-enter"><header class="section-heading"><div><span class="eyebrow">SALA DE SITUAÇÃO</span><h1>Relatório de comando</h1><p>Cada variação abaixo vem do estado persistente da campanha.</p></div><button class="primary-button" data-action="advance-day" ${state.day >= 6 ? 'disabled' : ''}>Avançar para o próximo dia</button></header>
-    <div class="week-track">${Array.from({ length: 7 }, (_, i) => `<div class="day-node ${i < goal ? 'done' : i === goal ? 'current' : ''}"><span>${i + 1}</span><small>DIA ${i + 1}</small></div>`).join('')}</div>
-    <div class="report-grid"><div class="kpi-grid">${kpi('Segurança', state.city.security, 'respostas e prevenção')}${kpi('Confiança', state.city.trust, 'legitimidade pública')}${kpi('Integridade', state.city.integrity, 'decisões e auditoria')}${kpi('Moral', state.city.morale, 'fadiga e liderança')}${kpi('Prontidão', state.operationsReadiness, 'recursos operacionais')}${kpi('Pressão política', state.city.politicalPressure, 'quanto menor, melhor')}</div>
-      <div class="journal-panel glass-panel"><h2>Journal de causa e efeito</h2>${state.journal.slice(0, 10).map(item => `<div class="journal-row tone-${item.tone}"><span>D${item.day + 1}</span><p>${escapeHtml(item.text)}</p></div>`).join('')}</div></div>
-    <div class="gate-panel"><h2>Progresso do vertical slice</h2><div class="gate-grid">${[
-      ['Prólogo concluído', state.storyStage === 'office'], ['6 ligações com efeitos', state.stats.calls >= 6], ['Compra registrada', state.stats.purchases >= 1], ['Contratação registrada', state.stats.hires >= 1], ['3 salas construídas', state.stats.rooms >= 3], ['Incidente resolvido', state.stats.incidentsResolved >= 1], ['Caso investigado', state.caseFile.progress >= 50], ['Primeira semana', state.day >= 6]
-    ].map(([label, done]) => `<span class="gate ${done ? 'done' : ''}"><i>${done ? '✓' : '·'}</i>${label}</span>`).join('')}</div></div>
-  </section>`;
+function campaign(s){
+ const active=currentChapter(s),pending=pendingChapter(s),choiceChapter=pending||active;
+ return `${header('CAMPANHA · '+active.id,active.title,active.summary,button('Avançar um dia','advance-day','','secondary'))}<div class="campaign-photo">${sceneDetail(s.day<56?'c09':'c10',s.day<56?'15 190 1650 330':'386 136 874 348','Autoridades reunidas em cena da Bíblia Mestre')}</div><div class="campaign-layout"><aside class="chapter-list">${chapters.map(c=>`<article class="${c.id===active.id?'current':''}"><span>${c.id}</span><div><b>${c.title}</b><small>${s.campaignDecisions.some(d=>d.chapterId===c.id)?'Decisão registrada':s.day>=c.fromDay?'Briefing disponível':'A partir do dia '+(c.fromDay+1)}</small></div></article>`).join('')}</aside><section class="chapter-decision">${pending?`<span class="eyebrow">DECISÃO DO COMISSÁRIO</span><h2>${choiceChapter.title}</h2><div class="speaker-line">${portrait(person(choiceChapter.speaker),'medium')}<p><b>${e(person(choiceChapter.speaker).name)}</b>${choiceChapter.summary}</p></div><div class="campaign-options">${choiceChapter.choices.map(c=>button(`<span><b>${c.title}</b><small>${c.text}</small></span>${icon('arrow')}`,'campaign-decision',`data-chapter="${choiceChapter.id}" data-choice="${c.id}"`,'choice')).join('')}</div>`:`<span class="eyebrow">LEGADO DA GESTÃO</span><h2>${resolutionLabel(s)}</h2><p>As decisões desta fase foram registradas. Continue a gestão ou avance até o próximo marco.</p>${button('Próximo marco da campanha','next-chapter','','secondary')}`}</section></div>`;
 }
-
-function savesScreen(state, saveSlots) {
-  return `<section class="saves-screen screen-enter"><header class="section-heading"><div><span class="eyebrow">PERSISTÊNCIA LOCAL</span><h1>Central de salvamento</h1><p>IndexedDB com checksum e fallback local. O RNG, edifícios, relações e ocorrências são retomados.</p></div></header>
-    <div class="save-grid">${(saveSlots || [1, 2, 3].map(slot => ({ slot, empty: true }))).map(slot => `<article class="save-card ${slot.empty ? 'empty' : ''}"><span>SLOT ${slot.slot}</span>${slot.empty ? '<h2>Vazio</h2><p>Disponível para um save manual.</p>' : slot.corrupt ? '<h2>Arquivo inválido</h2><p>A cópia original não foi alterada.</p>' : `<h2>Dia ${slot.day + 1}</h2><p>${new Date(slot.savedAt).toLocaleString('pt-BR')}</p>`}<div><button data-action="save-slot" data-slot="${slot.slot}">Salvar aqui</button><button data-action="load-slot" data-slot="${slot.slot}" ${slot.empty || slot.corrupt ? 'disabled' : ''}>Carregar</button></div></article>`).join('')}</div>
-    <div class="save-tools glass-panel"><div><h2>Backup portável</h2><p>Exporte o estado atual ou importe um JSON validado (até 5 MB).</p></div><button class="secondary-button" data-action="export-save">Exportar JSON</button><label class="secondary-button file-button">Importar JSON<input type="file" id="import-save" accept="application/json,.json" /></label></div>
-  </section>`;
+function report(s){
+ return `${header('SALA DE SITUAÇÃO','O peso das suas decisões.','Resultados, compromissos e memória institucional.',button('Avançar um dia','advance-day','','secondary'))}<div class="page-body"><div class="report-meters">${[['Segurança',s.city.security],['Confiança pública',s.city.trust],['Integridade',s.city.integrity],['Saúde e serviços',s.city.health],['Moral',s.city.morale],['Pressão política',s.city.politicalPressure]].map(([l,v],i)=>meter(l,v,i===5?'red':i===2?'gold':'blue')).join('')}</div><div class="report-columns"><section class="journal"><h2>Registro de comando</h2>${s.journal.slice(0,35).map(j=>`<article class="journal-${j.tone}"><span>D${j.day+1}<small>${String(Math.floor(j.time/60)).padStart(2,'0')}:${String(j.time%60).padStart(2,'0')}</small></span><p>${e(j.text)}</p></article>`).join('')}</section><aside class="commitments"><h2>Compromissos assumidos</h2>${s.promises.map(p=>`<article>${badge(p.done?'Concluído':p.missed?'Vencido':'Até o dia '+(p.dueDay+1),p.done?'green':p.missed?'red':'neutral')}<h3>${e(p.text)}</h3></article>`).join('')||'<p class="muted">As condições negociadas nas chamadas aparecerão aqui.</p>'}<h2 class="spaced-title">Decisões memoráveis</h2>${s.campaignDecisions.map(d=>`<article><span class="eyebrow">${d.chapterId} · DIA ${d.day+1}</span><h3>${e(d.title)}</h3></article>`).join('')}</aside></div></div>`;
 }
-
-function settingsScreen(state) {
-  const s = state.settings;
-  return `<section class="settings-screen screen-enter"><header class="section-heading"><div><span class="eyebrow">ACESSIBILIDADE</span><h1>Configurações</h1><p>Preferências persistem no save e não alteram o desafio.</p></div></header><div class="settings-panel glass-panel">
-    <label><span><b>Alto contraste</b><small>Reforça contornos e contraste da interface.</small></span><input type="checkbox" data-setting="highContrast" ${s.highContrast ? 'checked' : ''}></label>
-    <label><span><b>Reduzir animações</b><small>Remove chuva, pulsos e transições intensas.</small></span><input type="checkbox" data-setting="reducedMotion" ${s.reducedMotion ? 'checked' : ''}></label>
-    <label><span><b>Som</b><small>Prepara efeitos; esta build usa feedback visual por padrão.</small></span><input type="checkbox" data-setting="sound" ${s.sound ? 'checked' : ''}></label>
-    <label class="range-setting"><span><b>Escala de texto</b><small>${Math.round(s.fontScale * 100)}%</small></span><input type="range" min="0.9" max="1.25" step="0.05" value="${s.fontScale}" data-setting="fontScale"></label>
-    <div class="controls-help"><h2>Controles</h2><p><kbd>Esc</kbd> voltar · <kbd>Espaço</kbd> pausar · <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> velocidades · roda/pinça no mapa.</p></div></div>
-  </section>`;
+function saves(s,ui){
+ return `${header('ARQUIVOS DO COMANDO','Sua gestão, preservada.','Use três arquivos locais e mantenha um backup no computador.')}<div class="page-body"><div class="save-grid">${(ui.saveSlots||[1,2,3].map(slot=>({slot,empty:true}))).map(slot=>`<article><span class="eyebrow">ARQUIVO 0${slot.slot}</span><h2>${slot.empty?'Disponível':slot.corrupt?'Requer recuperação':'Dia '+(slot.day+1)}</h2><p>${slot.savedAt?new Date(slot.savedAt).toLocaleString('pt-BR'):'Nenhuma campanha neste arquivo.'}</p>${button('Salvar gestão','save-slot',`data-slot="${slot.slot}"`)}${button('Carregar','load-slot',`data-slot="${slot.slot}" ${slot.empty||slot.corrupt?'disabled':''}`,'secondary')}</article>`).join('')}</div><div class="backup-tools"><div><h2>Backup portável</h2><p>Transfira a campanha entre dispositivos por arquivo JSON.</p></div>${button('Exportar backup','export-save','','secondary')}<label class="button secondary file-button">Importar backup<input type="file" id="import-save" accept="application/json,.json"></label></div></div>`;
 }
-
-function incidentModal(state, incidentId) {
-  const incident = state.activeIncidents.find(item => item.id === incidentId);
-  if (!incident) return '';
-  const template = eventTemplates.find(item => item.type === incident.type);
-  const district = state.city.districts.find(item => item.id === incident.districtId);
-  const available = state.fleet.filter(vehicle => vehicle.status === 'available');
-  return `<div class="modal-backdrop" data-action="close-modal"><section class="incident-modal" role="dialog" aria-modal="true" aria-labelledby="incident-title" data-modal-stop>
-    <header><span class="severity-badge">NÍVEL ${incident.severity}</span><button class="icon-button" data-action="close-modal" aria-label="Fechar">×</button></header><span class="eyebrow">${incident.id} · ${district?.name}</span><h2 id="incident-title">${incident.title}</h2><p class="incident-objective">Objetivo: ${incident.objective}</p>
-    ${incident.stage === 'pending' ? `<h3>Escolha uma unidade disponível</h3><div class="dispatch-list">${available.map(vehicle => `<button data-action="dispatch" data-incident="${incident.id}" data-vehicle="${vehicle.id}"><span>▰</span><span><b>${vehicle.name}</b><small>${vehicle.id} · condição ${vehicle.condition}%</small></span><em>ETA ${vehicle.eta + incident.severity * 2}m</em></button>`).join('') || '<div class="empty-state">Nenhuma viatura disponível. Conclua outra ocorrência ou adquira um veículo.</div>'}</div>` : incident.stage === 'enroute' ? `<div class="arrival-progress"><span style="width:${incident.progress}%"></span></div><p>Unidade a caminho — ${Math.round(incident.progress)}%. O tempo continua no mundo.</p>` : `<h3>Unidade no local — decisão de comando</h3><div class="resolution-grid"><button data-action="resolve-incident" data-id="${incident.id}" data-choice="A"><b>${template.choiceA}</b><span>prioriza proteção e legitimidade</span></button><button data-action="resolve-incident" data-id="${incident.id}" data-choice="B"><b>${template.choiceB}</b><span>prioriza contenção e segurança</span></button></div>`}
-  </section></div>`;
+function settings(s){
+ return `${header('PREFERÊNCIAS','No seu ritmo.','Ajustes de leitura e movimento preservam a campanha.')}<div class="page-body narrow"><div class="settings-panel">${[['highContrast','Alto contraste','Reforçar limites e informações'],['reducedMotion','Reduzir movimento','Diminuir transições e animações'],['sound','Feedback sonoro','Sinal de chamada e retorno de comandos']].map(([id,l,d])=>`<label><span><b>${l}</b><small>${d}</small></span><input type="checkbox" data-setting="${id}" ${s.settings[id]?'checked':''}></label>`).join('')}<label><span><b>Tamanho do texto</b><small>${Math.round(s.settings.fontScale*100)}%</small></span><input type="range" data-setting="fontScale" min=".9" max="1.25" step=".05" value="${s.settings.fontScale}"></label><div class="controls-help"><h2>Controles</h2><p>Espaço pausa · 1, 2 e 3 alteram a velocidade · Esc retorna · arraste e use a roda ou pinça no mapa.</p></div></div></div>`;
 }
-
-function topHud(state) {
-  return `<header class="top-hud"><button class="brand-button" data-action="navigate" data-screen="office" aria-label="Voltar ao gabinete"><span class="seal small">VG</span><span><b>COMISSÁRIO</b><small>CIDADE EM COLAPSO</small></span></button>
-    <div class="hud-objective"><span class="pulse-dot"></span><span><small>OBJETIVO</small><b>${escapeHtml(state.objective)}</b></span></div>
-    <div class="hud-stats"><span><small>CAIXA</small><b>${formatMoney(state.finance.cash)}</b></span><span><small>CONFIANÇA</small><b>${state.city.trust}</b></span><span><small>SEGURANÇA</small><b>${state.city.security}</b></span></div>
-    <div class="time-controls"><output>${formatGameTime(state)}</output><button data-action="set-speed" data-speed="0" class="${state.speed === 0 ? 'active' : ''}" aria-label="Pausar">Ⅱ</button><button data-action="set-speed" data-speed="1" class="${state.speed === 1 ? 'active' : ''}">1×</button><button data-action="set-speed" data-speed="3" class="${state.speed === 3 ? 'active' : ''}">3×</button><button data-action="set-speed" data-speed="6" class="${state.speed === 6 ? 'active' : ''}">6×</button></div>
-    <button class="icon-button save-quick" data-action="quick-save" aria-label="Salvar">▣</button>
-  </header>`;
+function gallery(){
+ return `${header('ACERVO VISUAL OFICIAL','A Bíblia em imagens.','As dez composições do documento original, disponíveis para consulta.')}<div class="gallery-grid">${artGallery.map(a=>`<button class="art-card" data-action="view-art" data-id="${a.id}"><img src="${a.url}" loading="lazy" alt="${a.title}"><span><b>${a.id}</b>${a.title}${icon('arrow')}</span></button>`).join('')}</div>`;
 }
-
-function bottomNav(state) {
-  const items = [['office', '▤', 'Gabinete'], ['map', '⌖', 'Mapa'], ['phone', '☎', 'Telefone'], ['fleet', '$', 'Frota'], ['staff', '♟', 'RH'], ['precinct', '▦', 'Delegacia'], ['case', '⌕', 'Caso'], ['report', '▥', 'Relatório']];
-  return `<nav class="bottom-nav" aria-label="Navegação principal">${items.map(([screen, icon, label]) => `<button class="${state.screen === screen ? 'active' : ''}" data-action="navigate" data-screen="${screen}"><span>${icon}</span><small>${label}</small></button>`).join('')}</nav>`;
+function incidentDialog(s,id){
+ const inc=s.activeIncidents.find(i=>i.id===id);if(!inc)return '';
+ const t=eventTemplates.find(t=>t.type===inc.type);
+ const title=`<span class="eyebrow">${e(inc.id)} · OCORRÊNCIA NÍVEL ${inc.severity}</span><h2>${e(inc.title)}</h2><p>${e(inc.objective)}</p>`;
+ return `<div class="modal-backdrop"><section class="modal incident-dialog" role="dialog" aria-modal="true" aria-labelledby="incident-title"><button class="modal-close icon-button" data-action="close-modal" aria-label="Fechar">${icon('close')}</button><div class="incident-scene"><div class="scene-street"></div><div class="scene-block"><span>${inc.type==='robbery'?'AGÊNCIA BANCÁRIA':'LOCAL DA OCORRÊNCIA'}</span></div><div class="perimeter"></div><span class="scene-vehicle"></span><i class="civilian c1"></i><i class="civilian c2"></i><i class="civilian c3"></i><span class="scene-label">VISTA ORTOGONAL · CENTRAL DE COMANDO</span></div><div class="modal-content" id="incident-title">${title}
+ ${inc.stage==='pending'?`<h3>Unidades disponíveis</h3><div class="dispatch-list">${s.fleet.filter(v=>v.status==='available').map(v=>button(`${icon('fleet')}<span><b>${e(v.name)}</b><small>Condição ${v.condition}% · ${e(v.id)}</small></span>${icon('arrow')}`,'dispatch',`data-incident="${inc.id}" data-vehicle="${v.id}"`,'choice')).join('')||empty('Sem unidade disponível','Aguarde retorno, conclusão de manutenção ou entrega de veículo.')}</div>`:inc.stage==='enroute'?`<div class="arrival-progress"><span style="width:${inc.progress}%"></span></div><p>Em deslocamento · ETA total ${inc.eta} min · ${Math.round(inc.progress)}% da rota.</p>${button('Acompanhar avanço de 10 min','advance-time','data-minutes="10"','secondary')}`:`<div class="operation-choices">${button(t.choiceA,'resolve-incident',`data-id="${inc.id}" data-choice="A"`)}${button(t.choiceB,'resolve-incident',`data-id="${inc.id}" data-choice="B"`,'secondary')}</div><p class="muted">A proteção de civis e a proporcionalidade orientam a avaliação.</p>`}</div></section></div>`;
 }
-
-export function renderApp(state, ui = {}) {
-  const inGame = !['title', 'intro'].includes(state.screen) && state.storyStage === 'office';
-  let body;
-  switch (state.screen) {
-    case 'title': body = titleScreen(state, ui.hasSave); break;
-    case 'intro': body = introScreen(state); break;
-    case 'office': body = officeScreen(state); break;
-    case 'phone': body = phoneScreen(state); break;
-    case 'map': body = mapScreen(state); break;
-    case 'precinct': body = precinctHTML(state, ui.selectedRoom); break;
-    case 'fleet': body = fleetScreen(state); break;
-    case 'staff': body = staffScreen(state); break;
-    case 'case': body = caseScreen(state); break;
-    case 'report': body = reportScreen(state); break;
-    case 'saves': body = savesScreen(state, ui.saveSlots); break;
-    case 'settings': body = settingsScreen(state); break;
-    default: body = officeScreen(state);
-  }
-  return `${inGame ? topHud(state) : ''}<div class="screen-frame ${inGame ? 'with-hud' : ''}">${body}</div>${inGame ? bottomNav(state) : ''}${incidentModal(state, ui.selectedIncident)}`;
+function callDialog(ui){
+ if(!ui.callResult)return '';const p=person(ui.callResult.personId);
+ return `<div class="modal-backdrop"><section class="modal call-dialog" role="dialog" aria-modal="true" aria-label="Resposta da chamada"><button class="modal-close icon-button" data-action="close-modal" aria-label="Fechar">${icon('close')}</button>${portrait(p,'call')}<div class="call-result"><span class="eyebrow">LIGAÇÃO REGISTRADA</span><h2>${p.name}</h2><h3>${e(ui.callResult.title)}</h3><p>“${e(ui.callResult.result)}”</p>${button('Encerrar chamada','close-modal','','secondary')}</div></section></div>`;
 }
-
-export const lookupOpeningChoice = id => openingChoices.find(choice => choice.id === id);
-export const lookupVehicle = type => vehiclesCatalog.find(item => item.type === type);
-export const lookupCandidate = id => candidates.find(item => item.id === id);
-export const lookupPhoneTopic = personId => phoneTopics[personId];
+export function renderApp(s,ui={}){
+ if(s.screen==='title')return title(s,ui);
+ if(s.screen==='intro')return intro(s);
+ let body='';
+ if(s.screen==='office')body=office(s);
+ if(s.screen==='phone')body=phone(s,ui);
+ if(s.screen==='map')body=operations(s);
+ if(s.screen==='precinct')body=header('PATRIMÔNIO E INFRAESTRUTURA','Uma instituição em construção.','Instale módulos, conclua obras e amplie a capacidade.')+precinctHTML(s,ui.selectedRoom);
+ if(s.screen==='fleet')body=fleet(s);
+ if(s.screen==='staff')body=staff(s);
+ if(s.screen==='case')body=investigation(s);
+ if(s.screen==='campaign')body=campaign(s);
+ if(s.screen==='report')body=report(s);
+ if(s.screen==='saves')body=saves(s,ui);
+ if(s.screen==='settings')body=settings(s);
+ if(s.screen==='gallery')body=gallery();
+ const inGame=s.storyStage==='office';
+ const art=ui.selectedArt?artGallery.find(a=>a.id===ui.selectedArt):null;
+ return `${inGame?sidebar(s)+hud(s):'<button class="standalone-back button secondary" data-action="navigate" data-screen="title">Voltar ao início</button>'}<main class="main-content ${inGame?'':'standalone'}" id="main-content">${body}</main>${incidentDialog(s,ui.selectedIncident)}${callDialog(ui)}${art?`<div class="modal-backdrop"><section class="art-lightbox" role="dialog" aria-modal="true" aria-label="${art.title}"><button class="modal-close icon-button" data-action="close-modal" aria-label="Fechar">${icon('close')}</button><img src="${art.url}" alt="${art.title}"><p>${art.id} · ${art.title}</p></section></div>`:''}`;
+}
+export const lookupOpeningChoice=id=>openingChoices.find(c=>c.id===id);
+export const lookupVehicle=id=>vehiclesCatalog.find(v=>v.type===id);
+export const lookupCandidate=()=>null;
+export const lookupPhoneTopic=(id,topicId)=>topics[id]?.find(t=>t.id===topicId)||topics[id]?.[0];

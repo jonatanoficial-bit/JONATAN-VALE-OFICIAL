@@ -1,102 +1,26 @@
 import { districts } from './content.js';
-
-const POI_OFFSETS = [[18, 23], [50, 52], [74, 30]];
-let camera = { x: 0, y: 0, zoom: 1 };
-
-export function cityMapHTML(state) {
-  const districtHtml = districts.map((district, dIndex) => `
-    <div class="district" data-district="${district.id}" style="left:${district.x}%;top:${district.y}%;width:${district.w}%;height:${district.h}%;--district:${district.color}">
-      <span class="district-name">${district.name}</span>
-      <span class="district-risk">risco ${state.city.districts[dIndex].crime}</span>
-      ${district.poi.map((poi, index) => `<span class="poi" style="left:${POI_OFFSETS[index][0]}%;top:${POI_OFFSETS[index][1]}%" title="${poi}"><i></i>${poi}</span>`).join('')}
-    </div>`).join('');
-  const incidents = state.activeIncidents.map(incident => `
-    <button class="incident-marker severity-${incident.severity}" style="left:${incident.x}%;top:${incident.y}%" data-action="open-incident" data-id="${incident.id}" aria-label="Abrir ${incident.title}">
-      <span>${incident.icon}</span><b>${incident.severity}</b>
-    </button>`).join('');
-  const vehicles = state.fleet.map((vehicle, index) => {
-    const district = districts.find(d => d.id === vehicle.districtId) || districts[0];
-    const incident = state.activeIncidents.find(i => i.id === vehicle.incidentId);
-    const progress = incident ? (incident.progress || 0) / 100 : 0;
-    const targetX = incident?.x ?? district.x + 25;
-    const targetY = incident?.y ?? district.y + 35;
-    const startX = district.x + 15 + index * 2;
-    const startY = district.y + 60;
-    const x = startX + (targetX - startX) * progress;
-    const y = startY + (targetY - startY) * progress;
-    return `<button class="vehicle-marker ${vehicle.status}" style="left:${x}%;top:${y}%" title="${vehicle.name} · ${vehicle.status}" aria-label="${vehicle.name}, ${vehicle.status}">▰</button>`;
-  }).join('');
-  return `
-    <section class="map-layout">
-      <div class="map-toolbar glass-panel">
-        <div><span class="eyebrow">CENTRO DE DESPACHO</span><h2>Mapa operacional</h2></div>
-        <div class="map-controls" aria-label="Controles do mapa">
-          <button class="icon-button" data-map-action="zoom-out" aria-label="Diminuir zoom">−</button>
-          <output id="zoom-level">${Math.round(camera.zoom * 100)}%</output>
-          <button class="icon-button" data-map-action="zoom-in" aria-label="Aumentar zoom">+</button>
-          <button class="secondary-button" data-map-action="reset">Centralizar</button>
-        </div>
-      </div>
-      <div class="city-map-viewport" id="city-map-viewport" aria-label="Mapa top-down de cinco distritos. Arraste para mover; use pinça ou roda para zoom.">
-        <div class="city-map-world" id="city-map-world" style="transform:translate(${camera.x}px,${camera.y}px) scale(${camera.zoom})">
-          <div class="water water-a"></div><div class="water water-b"></div>
-          <div class="road-grid"></div>
-          <svg class="bridges" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M39 74 L51 66 M61 57 L70 47 M60 25 L63 31" />
-          </svg>
-          ${districtHtml}${incidents}${vehicles}
-        </div>
-        <div class="map-legend"><span><i class="legend-dot incident"></i> Ocorrência</span><span><i class="legend-dot unit"></i> Viatura</span><span>Arraste · pinça · roda</span></div>
-      </div>
-    </section>`;
+import { icon } from './icons.js';
+import { districtBase, roadNodes, routePosition } from './routes.js';
+let camera={x:0,y:0,zoom:1};
+const labels=[{name:'MANHATTAN',x:41,y:45},{name:'BRONX',x:60,y:8},{name:'QUEENS',x:74,y:35},{name:'BROOKLYN',x:65,y:79},{name:'STATEN ISLAND',x:22,y:89}];
+export function cityMapHTML(state){
+ const incidents=state.activeIncidents.map(i=>`<button class="incident-marker severity-${i.severity} ${i.stage}" style="left:${i.x}%;top:${i.y}%" data-action="open-incident" data-id="${i.id}" aria-label="Abrir ${i.title}"><span>${icon(i.type==='health'?'staff':i.type==='missing'?'case':'crisis')}</span><b>${i.severity}</b></button>`).join('');
+ const routes=state.activeIncidents.filter(i=>i.route&&i.stage!=='pending').map(i=>`<polyline points="${i.route.map(p=>p.x+','+p.y).join(' ')}" />`).join('');
+ const vehicles=state.fleet.filter(v=>['available','assigned'].includes(v.status)).map(v=>{
+  const i=state.activeIncidents.find(i=>i.id===v.incidentId);
+  const p=i?.route?routePosition(i.route,(i.progress||0)/100):roadNodes.find(n=>n.id===(v.nodeId||districtBase[v.districtId]));
+  return `<span class="vehicle-marker ${v.status} ${v.type}" style="left:${p.x}%;top:${p.y}%" title="${v.name}"><i></i><b></b></span>`;
+ }).join('');
+ const pois=roadNodes.map(n=>`<span class="poi-dot" style="left:${n.x}%;top:${n.y}%" title="${districts.find(d=>d.id===n.districtId)?.poi[roadNodes.indexOf(n)%2]||'Corredor de serviço'}"></span>`).join('');
+ return `<section class="map-layout"><div class="map-toolbar"><span class="eyebrow">MAPA ORTOGONAL · 5 DISTRITOS</span><div class="map-controls"><button data-map-action="zoom-out" aria-label="Diminuir zoom">−</button><output id="zoom-level">${Math.round(camera.zoom*100)}%</output><button data-map-action="zoom-in" aria-label="Aumentar zoom">+</button><button data-map-action="reset">Centralizar</button></div></div><div class="city-map-viewport" id="city-map-viewport" aria-label="Mapa 2D da cidade, arraste para mover e use pinça para ampliar"><div class="city-map-world" id="city-map-world" style="transform:translate(${camera.x}px,${camera.y}px) scale(${camera.zoom})"><img class="city-texture" src="./assets/backgrounds/c04.webp" alt="Mapa noturno ortogonal aprovado da cidade" draggable="false"><svg class="route-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${routes}</svg>${labels.map(d=>`<span class="district-label" style="left:${d.x}%;top:${d.y}%">${d.name}</span>`).join('')}${pois}${vehicles}${incidents}</div><div class="map-legend"><span><i class="legend-incident"></i>Ocorrência</span><span><i class="legend-vehicle"></i>Viatura</span><span>Arraste · roda · pinça</span></div><div class="north-arrow">N<span>↑</span></div></div></section>`;
 }
-
-function applyCamera(world, output) {
-  camera.zoom = Math.max(0.75, Math.min(2.4, camera.zoom));
-  world.style.transform = `translate(${camera.x}px,${camera.y}px) scale(${camera.zoom})`;
-  if (output) output.textContent = `${Math.round(camera.zoom * 100)}%`;
-}
-
-export function bindMapControls(root) {
-  const viewport = root.querySelector('#city-map-viewport');
-  const world = root.querySelector('#city-map-world');
-  if (!viewport || !world) return;
-  const output = root.querySelector('#zoom-level');
-  root.querySelectorAll('[data-map-action]').forEach(button => button.addEventListener('click', () => {
-    const action = button.dataset.mapAction;
-    if (action === 'zoom-in') camera.zoom += 0.2;
-    if (action === 'zoom-out') camera.zoom -= 0.2;
-    if (action === 'reset') camera = { x: 0, y: 0, zoom: 1 };
-    applyCamera(world, output);
-  }));
-  viewport.addEventListener('wheel', event => {
-    event.preventDefault();
-    camera.zoom += event.deltaY < 0 ? 0.12 : -0.12;
-    applyCamera(world, output);
-  }, { passive: false });
-  const pointers = new Map();
-  let last = null;
-  let pinchDistance = null;
-  viewport.addEventListener('pointerdown', event => {
-    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    last = { x: event.clientX, y: event.clientY };
-    viewport.setPointerCapture(event.pointerId);
-  });
-  viewport.addEventListener('pointermove', event => {
-    if (!pointers.has(event.pointerId)) return;
-    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    if (pointers.size === 1 && last) {
-      camera.x += event.clientX - last.x; camera.y += event.clientY - last.y;
-      last = { x: event.clientX, y: event.clientY };
-    } else if (pointers.size === 2) {
-      const [a, b] = [...pointers.values()];
-      const distance = Math.hypot(a.x - b.x, a.y - b.y);
-      if (pinchDistance) camera.zoom *= distance / pinchDistance;
-      pinchDistance = distance;
-    }
-    applyCamera(world, output);
-  });
-  const release = event => { pointers.delete(event.pointerId); last = null; pinchDistance = null; };
-  viewport.addEventListener('pointerup', release);
-  viewport.addEventListener('pointercancel', release);
+function applyCamera(world,output){camera.zoom=Math.max(1,Math.min(3,camera.zoom));world.style.transform=`translate(${camera.x}px,${camera.y}px) scale(${camera.zoom})`;if(output)output.textContent=Math.round(camera.zoom*100)+'%';}
+export function bindMapControls(root){
+ const viewport=root.querySelector('#city-map-viewport'),world=root.querySelector('#city-map-world'),output=root.querySelector('#zoom-level');if(!viewport||!world)return;
+ root.querySelectorAll('[data-map-action]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.mapAction==='zoom-in')camera.zoom+=.2;if(b.dataset.mapAction==='zoom-out')camera.zoom-=.2;if(b.dataset.mapAction==='reset')camera={x:0,y:0,zoom:1};applyCamera(world,output);}));
+ viewport.addEventListener('wheel',e=>{e.preventDefault();camera.zoom+=e.deltaY<0?.12:-.12;applyCamera(world,output);},{passive:false});
+ const points=new Map();let last=null,pinch=null;
+ viewport.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;points.set(e.pointerId,{x:e.clientX,y:e.clientY});last={x:e.clientX,y:e.clientY};viewport.setPointerCapture(e.pointerId);});
+ viewport.addEventListener('pointermove',e=>{if(!points.has(e.pointerId))return;points.set(e.pointerId,{x:e.clientX,y:e.clientY});if(points.size===1&&last){camera.x+=e.clientX-last.x;camera.y+=e.clientY-last.y;last={x:e.clientX,y:e.clientY};}else if(points.size===2){const[a,b]=[...points.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch)camera.zoom*=d/pinch;pinch=d;}applyCamera(world,output);});
+ const release=e=>{points.delete(e.pointerId);last=null;pinch=null;};viewport.addEventListener('pointerup',release);viewport.addEventListener('pointercancel',release);
 }

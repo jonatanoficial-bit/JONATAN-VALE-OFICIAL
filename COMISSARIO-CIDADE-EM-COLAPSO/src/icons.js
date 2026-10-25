@@ -1,0 +1,25 @@
+const paths = {
+  shield: '<path d="M12 3 4 6v6c0 4 8 9 8 9s8-5 8-9V6z"/><path d="m8 12 3 3 5-6"/>',
+  office: '<path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6M9 9h.01M15 9h.01"/>',
+  map: '<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zm6-3v15m6-12v15"/>',
+  phone: '<path d="M7 3 3 5c-1 7 9 17 16 16l2-4-5-3-2 3c-3-1-6-4-7-7l3-2z"/>',
+  fleet: '<path d="m4 9 2-5h12l2 5M3 10h18v8H3zm2 8v3m14-3v3M6 13h2m8 0h2"/>',
+  staff: '<circle cx="9" cy="7" r="3"/><path d="M3 21v-4a6 6 0 0 1 12 0v4M16 4a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5v2"/>',
+  precinct: '<path d="M3 3h18v18H3zM3 10h18M10 3v18m0-6h11"/>',
+  case: '<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M8 8h4m-4 4h2"/>',
+  report: '<path d="M4 3h16v18H4zm4 14v-4m4 4V7m4 10v-6"/>',
+  crisis: '<path d="m12 3 10 18H2zM12 9v5m0 3h.01"/>',
+  save: '<path d="M4 3h13l4 4v14H3V3zm3 0v6h10V3M7 21v-8h10v8"/>',
+  settings: '<path d="m10 3-.5 3-3 1-2.5-1L2 10l2.5 2L4 15l-2 2 3 4 3-1 2 1 1 2h4l1-3 3-1 2.5-2-1.5-3 1-3-2-2-3-1-1-3z"/><circle cx="12" cy="12" r="3"/>',
+  arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/>',
+  check: '<path d="m5 12 4 4L20 5"/>',
+  close: '<path d="m5 5 14 14M5 19 19 5"/>',
+  play: '<path d="m8 4 12 8-12 8z"/>',
+  pause: '<path d="M8 4v16m8-16v16"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="8" cy="8" r="2"/><path d="m3 18 6-6 4 4 4-5 4 6"/>',
+  wrench: '<path d="M14 4a6 6 0 0 0-7 7l-5 7 4 4 7-7a6 6 0 0 0 7-8l-4 4-4-4z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"/>',
+  briefcase: '<path d="M3 7h18v14H3zm5 0V3h8v4M3 12h18m-11 0v3h4v-3"/>'
+};
+export function icon(name, className = '') { return `<svg class="icon ${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.shield}</svg>`; }

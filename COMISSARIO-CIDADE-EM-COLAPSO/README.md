@@ -1,50 +1,47 @@
 # COMISSÁRIO — CIDADE EM COLAPSO
 
-Parte 1 / Lote 1 jogável do simulador estratégico da Vale Games. Assuma Raymond Jackson, receba o convite do prefeito fictício Allan Thompson e estabilize uma Nova York ficcionalizada durante a primeira semana de crise.
+Parte 2 / v0.2.0 do simulador estratégico da Vale Games. Assuma Raymond Jackson e conduza uma Nova York ficcionalizada por sete arcos de crise. Inclui as 15 imagens recuperadas da Bíblia Mestre, cinco fundos limpos e dez referências C01–C10. Os 12 personagens aparecem por detalhes fotográficos das composições disponíveis; os retratos individuais originais ainda não estavam anexados.
 
 ## Jogar
 
-Abra o link do GitHub Pages informado na entrega. A aplicação funciona em Android e desktop, salva localmente e não requer conta ou backend.
+GitHub Pages: https://jonatanoficial-bit.github.io/JONATAN-VALE-OFICIAL/COMISSARIO-CIDADE-EM-COLAPSO/
 
-Para executar o pacote baixado no computador:
+No computador, extraia o ZIP, abra um terminal na pasta e execute:
 
 ```bash
 python -m http.server 8080
 ```
 
-Depois abra `http://localhost:8080`. Um servidor local é recomendado porque o navegador restringe módulos JavaScript abertos diretamente por `file://`.
+Abra http://localhost:8080. Use um servidor local: navegadores restringem módulos quando o HTML é aberto diretamente por file://.
 
-## O que funciona
+## Conteúdo
 
-- Prólogo cinematográfico e ligação com quatro respostas persistentes.
-- Gabinete com hotspots reais, telefone com os 12 personagens e chamadas contextuais.
-- Caixa mensal, dotação anual, catálogo de veículos, ativos únicos, manutenção e folha.
-- Contratação de oito candidatos; estado e custos persistentes.
-- Mapa top-down dos cinco distritos, 12+ POIs, seis tipos de ocorrência, pan/zoom/pinça, despacho e ETA.
-- Delegacia top-down em grade, colisão e três módulos funcionais.
-- Investigação Arquivo Ponte, decisões operacionais, KPIs e journal explicativo.
-- Relógio 1×/3×/6×, primeira semana, RNG determinístico, três slots e autosave IndexedDB.
-- Exportação/importação de save, alto contraste, texto escalável e movimento reduzido.
+- Prólogo e ligação com quatro respostas persistentes.
+- Gabinete, telefone com 12 contatos, fotos e chamadas contextuais.
+- Caixa mensal, veículos únicos, entregas, manutenção e folha.
+- Oito candidatos, contratação, descanso e treinamento.
+- Cidade top-down, cinco distritos, pan/zoom/pinça, ocorrências, despacho e ETA.
+- Delegacia em grade, colisão e sete módulos com prazo de obra.
+- Arquivo Ponte com tarefas temporizadas, evidências e hipóteses.
+- Sete arcos com escolhas e cooperação estadual/federal condicionada.
+- Três slots, autosave, migração de saves v1 e exportação/importação JSON.
+- Contraste, texto escalável, movimento reduzido e som sintetizado.
 
-## Estrutura
+## Verificação
 
-- `src/content.js`: personagens, distritos, economia e conteúdo.
-- `src/state.js`: estado, reducer e validações.
-- `src/sim.js`: relógio, RNG e eventos.
-- `src/map.js`: mapa 2D interativo.
-- `src/precinct.js`: planta construível.
-- `src/persistence.js`: IndexedDB, checksum e migração.
-- `src/render.js`: telas e componentes.
-- `src/app.js`: orquestração e eventos.
-- `public/assets/asset-manifest.json`: IDs canônicos P01–P12 e C01–C10.
-
-## Testes
+Use Node.js 24. Não há dependências para executar o jogo.
 
 ```bash
 npm test
 npm run check
 ```
 
-## Créditos e licença
+Consulte AUDIT.md para resultados e limitações. O manifest assets/manifest.json registra origem e hashes das 15 imagens; src/art.js mapeia personagens às composições. Sem backend ou sincronização online.
 
-Conceito e direção: Vale Games. Todos os políticos e comandantes da trama são fictícios. Código da entrega reservado ao titular do projeto; consulte o proprietário antes de redistribuir comercialmente.
+## Publicação e download
+
+Arquivos estáticos com caminhos relativos, servidos na pasta COMISSARIO-CIDADE-EM-COLAPSO do repositório existente. GitHub Pages deve usar a branch main. Não é necessário build. As URLs do GitHub não têm prazo programado de expiração; dependem da permanência do repositório e dos arquivos.
+
+## Créditos
+
+Conceito, direção e imagens: Vale Games / titular do projeto. Personagens e autoridades ficcionais. Código reservado ao titular; consulte-o antes de redistribuição comercial.

@@ -1,12 +1,13 @@
 {
   "name": "comissario-cidade-em-colapso",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Lote 1 jogável — Comissário: Cidade em Colapso",
+  "description": "Parte 2 jogável — Comissário: Cidade em Colapso",
   "scripts": {
-    "test": "node --test tests/*.test.mjs",
-    "check": "node --check src/app.js && node --check src/state.js && node --check src/sim.js && node --check src/render.js && node --check src/map.js && node --check src/precinct.js && node --check src/persistence.js"
+    "test": "node --test --test-isolation=none tests/*.test.mjs",
+    "check": "node --experimental-vm-modules scripts/check.mjs",
+    "preview": "python3 -m http.server 4173 --bind 127.0.0.1"
   },
-  "engines": { "node": ">=20" }
+  "engines": { "node": ">=24" }
 }
