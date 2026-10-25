@@ -1,0 +1,10 @@
+{
+  "name": "Comissário — Cidade em Colapso",
+  "short_name": "Comissário",
+  "description": "Jogo estratégico de gestão policial e proteção cívica.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#07131d",
+  "theme_color": "#07131d",
+  "lang": "pt-BR"
+}
