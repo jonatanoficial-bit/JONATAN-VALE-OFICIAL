@@ -2,7 +2,7 @@
 
 ## Verificado localmente
 
-29 testes automatizados passaram: estado e economia, telefone, RNG, despacho, construção temporizada, manutenção, investigação, final de campanha, migração v1/v2, persistência e corrupção, renderização de 14 telas e correspondência das 15 imagens/12 personagens. Stress de 100 seeds por 365 dias: sem números inválidos, reexecução de chamadas ou bloqueio do arco final nas condições exercitadas.
+30 testes automatizados passaram: estado e economia, telefone, RNG, despacho, construção temporizada, manutenção, investigação, final de campanha, migração v1/v2, preferências, persistência e corrupção, renderização de 14 telas e correspondência das 15 imagens/12 personagens. Stress de 100 seeds por 365 dias: sem números inválidos, reexecução de chamadas ou bloqueio do arco final nas condições exercitadas.
 
 Checagem de sintaxe de 17 módulos, hashes das 15 imagens, ícones PWA e cobertura do cache offline aprovada.
 
@@ -12,7 +12,9 @@ Rolagem móvel nativa, prólogo acessível em telas curtas, mapa com modo de int
 
 ## Validação visual
 
-Chromium local não pôde iniciar por restrição do ambiente. Testes reais de navegador são executados pelo workflow Comissário E2E no GitHub; resultado em TEST_RESULTS.json após conclusão. Não confundir testes de renderização de strings com inspeção visual ou teste em aparelho Android físico.
+Chromium local não pôde iniciar por restrição do ambiente. A execução real no GitHub Actions passou em 1440×1000, 390×844 e 360×640, com zero erros de página: prólogo alcançável por rolagem, 12 contatos, foco/Escape, aquisição, contratação, despacho/resolução, construção, investigação, preferências, galeria, salvamento manual/automático, exportação/importação e retomada. HTML portátil executado via file:// com rede desativada também passou. Relatório integral em qa/browser-report.json e execução https://github.com/jonatanoficial-bit/JONATAN-VALE-OFICIAL/actions/runs/40227804422 (commit b0186410eae1c68ce5cac24694c89c2abefd33e1).
+
+Capturas de gabinete desktop/mobile e prólogo mobile foram inspecionadas. A emulação não substitui teste em Android físico. Service worker foi bloqueado deliberadamente no teste de rotas; instalação PWA não é declarada validada. GitHub Pages concluiu a implantação da versão testada.
 
 ## Pendências específicas
 

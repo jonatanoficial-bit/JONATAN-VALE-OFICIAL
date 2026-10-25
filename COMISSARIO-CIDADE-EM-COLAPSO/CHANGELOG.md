@@ -23,5 +23,5 @@
 - Autosave separado, três slots, importação confirmada e backups com integridade.
 - Clima, boletins, descanso, saúde e quatro desfechos após os sete arcos.
 - Áudio, ícones PWA, cache por versão e pacote HTML portátil.
-- 29 testes locais aprovados, incluindo stress de 100 seeds × 365 dias.
+- 30 testes locais aprovados, incluindo stress de 100 seeds × 365 dias.
 

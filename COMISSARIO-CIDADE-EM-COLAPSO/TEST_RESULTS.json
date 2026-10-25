@@ -1,8 +1,8 @@
 {
   "version": "1.0.0",
-  "checkedAt": "2026-10-25T19:45:01Z",
+  "checkedAt": "2026-10-25T19:49:49.123Z",
   "unitAndIntegration": {
-    "passed": 29,
+    "passed": 30,
     "failed": 0
   },
   "stress": {
@@ -17,6 +17,18 @@
   },
   "modules": 17,
   "localBrowser": "blocked by environment",
-  "githubBrowser": "pending workflow",
+  "githubBrowser": {
+    "result": "PASS",
+    "commit": "b0186410eae1c68ce5cac24694c89c2abefd33e1",
+    "run": "https://github.com/jonatanoficial-bit/JONATAN-VALE-OFICIAL/actions/runs/40227804422",
+    "viewports": [
+      "1440x1000",
+      "390x844",
+      "360x640"
+    ],
+    "portableOffline": "PASS",
+    "errors": 0,
+    "serviceWorker": "not exercised in browser; static coverage verified"
+  },
   "physicalAndroid": "not tested"
 }
