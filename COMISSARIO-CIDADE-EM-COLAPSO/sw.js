@@ -1,4 +1,4 @@
-const CACHE = 'comissario-v0.2.0';
+const CACHE = 'comissario-v0.2.1-scroll';
 const ASSETS = [
   './', './index.html', './styles.css', './manifest.webmanifest',
   './src/app.js', './src/content.js', './src/state.js', './src/sim.js',
