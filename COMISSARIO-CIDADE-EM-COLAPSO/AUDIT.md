@@ -1,11 +1,30 @@
-# Auditoria — Parte 2 / v0.2.0
+# Auditoria — Parte 3 / v1.0.0
 
-Verificação em 25/10/2026: `npm run check` passou; 8 testes de lógica passaram (`npm test`). Os 15 arquivos de imagem locais foram encontrados. A execução de Chromium foi bloqueada pelas restrições do ambiente; fluxo visual, Android, instalação PWA e GitHub Pages ainda não foram verificados em navegador nesta entrega.
+## Verificado localmente
 
-Implementado: fundos fotográficos originais C01–C05; referências C01–C10; telefone com 12 personagens visíveis; sete arcos com escolhas persistentes; rotas e ETA; entregas de frota, manutenção, construção temporizada, investigação com tarefas/evidências, contratação, descanso, treinamento, apoio estadual/federal condicionado; migração de saves v1.
+29 testes automatizados passaram: estado e economia, telefone, RNG, despacho, construção temporizada, manutenção, investigação, final de campanha, migração v1/v2, persistência e corrupção, renderização de 14 telas e correspondência das 15 imagens/12 personagens. Stress de 100 seeds por 365 dias: sem números inválidos, reexecução de chamadas ou bloqueio do arco final nas condições exercitadas.
 
-Os retratos são janelas fotográficas das composições do documento, não os 12 arquivos individuais canônicos. Esses originais não estavam anexados às fichas P01–P12; alguns detalhes têm resolução pequena. As telas C06–C10 incluem interfaces impressas e são referências: seus controles jogáveis foram feitos em HTML/SVG.
+Checagem de sintaxe de 17 módulos, hashes das 15 imagens, ícones PWA e cobertura do cache offline aprovada.
 
-Pendências: falas e som final, tutorial ampliado, notícias/clima/saúde mais profundos, finais mais elaborados, otimização e validação real em Android, E2E e polimento completo. Não se declara qualidade AAA ou aceite integral da Bíblia. Sem Firebase/configuração online fornecida: saves são locais e exportáveis.
+## Alterações da parte 3
 
-Nenhum segredo, credencial ou backend incluído. Compras e autoridades são ficcionais. Outros projetos no repositório são preservados.
+Rolagem móvel nativa, prólogo acessível em telas curtas, mapa com modo de interação explícito, menus completos no celular, foco preservado e modais com Escape/Tab. Guia inicial, clima e boletins determinísticos, saúde/descanso, quatro desfechos e continuidade. Autosave separado, três arquivos manuais, export/import com checksum e confirmação. PWA com cache completo por versão; som sintetizado e estrutura inicial para tradução.
+
+## Validação visual
+
+Chromium local não pôde iniciar por restrição do ambiente. Testes reais de navegador são executados pelo workflow Comissário E2E no GitHub; resultado em TEST_RESULTS.json após conclusão. Não confundir testes de renderização de strings com inspeção visual ou teste em aparelho Android físico.
+
+## Pendências específicas
+
+- Retratos canônicos P01–P12 individuais não anexados: usamos detalhes das composições C01–C10, alguns pequenos. Não foram gerados rostos novos.
+- Animações 2D e operações são abstratas; não há produção AAA, dublagem, trilha final ou elenco animado quadro a quadro.
+- Narrativa e casos representam uma implementação compacta; não há toda a profundidade idealizada nas 38 abas.
+- Instalação PWA e desempenho em Android físico exigem validação no aparelho.
+- Sem sincronização online: Firebase depende de projeto e configuração ainda não fornecidos.
+- Estrutura para futuras traduções; somente português implementado.
+
+Não se declara aceite integral da Bíblia nem qualidade AAA. A publicação é uma edição jogável v1.0.0 com essas limitações explícitas.
+
+## Preservação
+
+Saves antigos são migrados sem alterar o arquivo importado. Dados inválidos são recusados. Os arquivos das partes 1 e 2 e os demais projetos do repositório são preservados. Nenhuma credencial, segredo ou dependência de backend é incluída.

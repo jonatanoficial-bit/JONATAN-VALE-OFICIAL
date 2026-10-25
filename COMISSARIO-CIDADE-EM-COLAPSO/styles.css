@@ -60,3 +60,10 @@
  .command-person small,.contact-row small,.contact-hero .eyebrow,.topic-card>.badge,.save-grid .button,.backup-tools .button,.settings-panel small,.settings-panel b,.call-history p,.object-actions button{font-size:.875rem}.object-actions{flex-wrap:wrap;bottom:12px}.object-actions button{min-width:30%;min-height:44px}.object-actions button:last-child{min-width:100%}.office-briefing{bottom:115px}.commissioner-presence{bottom:345px}.office-scene{height:940px}.contact-list .contact-row{min-width:140px;max-width:140px}.contact-row b{font-size:.875rem}.contact-hero{align-items:flex-start}.contact-hero>.portrait{width:105px;height:160px}.topic-card{flex-wrap:wrap}.phone-workspace .badge{font-size:.75rem}.toast-region{bottom:108px}
 }
 @media(max-width:390px){.title-screen{min-height:0}.title-content{bottom:auto}.title-content h1{font-size:2.9rem}.world-clock{margin-left:0}.hud-identity{display:none}}
+@media(max-width:760px){
+ html{height:auto;overflow-x:hidden}body{height:auto;overflow-y:auto;overflow-x:hidden;min-height:100svh}.app-shell{height:auto;min-height:100svh}
+ .main-content{height:auto;min-height:100svh;overflow:visible}.title-screen,.intro-screen{height:auto;min-height:100svh;overflow:visible}.title-screen{padding-bottom:30px}.intro-screen{padding-bottom:40px}
+ .city-map-viewport{touch-action:pan-y}.city-map-viewport.map-interactive{touch-action:none}.modal-backdrop{touch-action:pan-y}.modal{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+}
+body.dialog-open{overflow:hidden}
+.map-controls{flex-wrap:wrap}

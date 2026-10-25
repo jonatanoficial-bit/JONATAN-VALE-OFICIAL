@@ -1,8 +1,10 @@
 import { candidates, districts, eventTemplates, fixedRooms, people } from './content.js';
 import { districtBase, routeBetween } from './routes.js';
 import { topics, topicRestriction } from './phone.js';
+import { chapters } from './campaign.js';
+import { campaignOutcome, weatherForDay } from './world-detail.js';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export function createInitialState(seed = 25102026) {
   const contacts = Object.fromEntries(people.map((person, index) => [person.id, {
@@ -14,11 +16,14 @@ export function createInitialState(seed = 25102026) {
   }]));
   return {
     schemaVersion: SCHEMA_VERSION,
-    version: '0.2.0',
+    version: '1.0.0',
     sequence: 0,
     campaignDecisions: [],
     caseQueue: [],
     lastFinanceMonth: 0,
+    campaignEnding: null,
+    weather: weatherForDay(seed, 0),
+    news: [],
     seed: seed >>> 0,
     rngState: seed >>> 0,
     screen: 'title',
@@ -211,6 +216,7 @@ export function reducer(input, action) {
       if(vehicle.condition < 25)return input;
       const district = state.city.districts.find(d=>d.id===incident.districtId);
       const route=routeBetween(vehicle.nodeId||districtBase[vehicle.districtId],incident.nodeId||districtBase[incident.districtId],district.traffic);
+      route.eta = Math.ceil(route.eta * (state.weather?.etaMultiplier || 1));
       incident.assignedVehicleId = vehicle.id;
       incident.stage = 'enroute';
       incident.progress = 0;
@@ -241,6 +247,7 @@ export function reducer(input, action) {
       const template = eventTemplates.find(e => e.type === incident.type);
       state.city.trust = clamp(state.city.trust + (action.choice === 'A' ? template.trust : Math.max(0, template.trust - 1)));
       state.city.security = clamp(state.city.security + (action.choice === 'B' ? template.security + 1 : template.security));
+      if (incident.type === 'health') state.city.health = clamp(state.city.health + 3);
       state.activeIncidents.splice(index, 1);
       state.completedIncidents.unshift(incident);
       state.completedIncidents=state.completedIncidents.slice(0,80);
@@ -249,17 +256,37 @@ export function reducer(input, action) {
       return state;
     }
     case 'CAMPAIGN_DECISION': {
-      const {chapter,choice}=action.payload;
+      const chapter = chapters.find(item => item.id === action.payload?.chapter?.id);
+      const choice = chapter?.choices.find(item => item.id === action.payload?.choice?.id);
+      if (!chapter || !choice) return input;
       if (state.day<chapter.fromDay || state.campaignDecisions.some(d=>d.chapterId===chapter.id) || (choice.effects.cash<0 && state.finance.cash < -choice.effects.cash))return input;
       applyEffects(state,choice.effects); if(choice.flag)state.flags[choice.flag]=true;
       state.campaignDecisions.push({chapterId:chapter.id,choiceId:choice.id,title:choice.title,day:state.day});
-      state.stats.choices+=1;addJournal(state,`${chapter.title}: ${choice.title}. ${choice.text}`,'decision');return state;
+      state.stats.choices+=1;addJournal(state,`${chapter.title}: ${choice.title}. ${choice.text}`,'decision');
+      if (!state.campaignEnding) {
+        state.campaignEnding = campaignOutcome(state);
+        if (state.campaignEnding) {
+          state.speed = 0;
+          state.objective = state.campaignEnding.title;
+          addJournal(state,`Audiência final: ${state.campaignEnding.title}. ${state.campaignEnding.summary}`,'decision');
+        }
+      }
+      return state;
     }
+    case 'CONTINUE_CAMPAIGN':
+      if (!state.campaignEnding) return input;
+      state.campaignEnding.dismissed = true;
+      state.objective = 'Gestão contínua: acompanhe ocorrências, orçamento e compromissos.';
+      return state;
+    case 'DISMISS_TUTORIAL':
+      state.flags.tutorialDismissed = true;
+      return state;
     case 'START_CASE_TASK': {
       const task=action.payload;
-      if(!state.caseFile.assignedDetectives.length || state.caseQueue.some(t=>t.id===task.id)||state.caseFile.actions.includes(task.id)||state.finance.cash<task.cost)return input;
       const internal=state.buildings.some(b=>b.type==='forensics'&&b.status==='active');
-      state.finance.cash-=internal?Math.round(task.cost*.3):task.cost;
+      const cost=internal?Math.round(task.cost*.3):task.cost;
+      if(!state.caseFile.assignedDetectives.length || state.caseQueue.some(t=>t.id===task.id)||state.caseFile.actions.includes(task.id)||state.finance.cash<cost)return input;
+      state.finance.cash-=cost;
       state.caseQueue.push({...task,finishesAt:state.day*1440+state.minutes+task.duration});
       addJournal(state,`Arquivo Ponte: ${task.title} em andamento.`,'case');return state;
     }
@@ -275,7 +302,7 @@ export function reducer(input, action) {
     }
     case 'STAFF_ORDER': {
       const person=state.staff.find(s=>s.id===action.id);if(!person)return input;
-      if(action.order==='case'){if(!/investigador|analista|perícia/i.test(person.role))return input;person.status='case';if(!state.caseFile.assignedDetectives.includes(person.id))state.caseFile.assignedDetectives.push(person.id);}
+      if(action.order==='case'){if(!/investigador|analista|perícia/i.test(person.role))return input;person.status='case';delete person.readyAt;if(!state.caseFile.assignedDetectives.includes(person.id))state.caseFile.assignedDetectives.push(person.id);}
       if(action.order==='rest'){person.status='rest';person.readyAt=state.day*1440+state.minutes+240;state.caseFile.assignedDetectives=state.caseFile.assignedDetectives.filter(id=>id!==person.id);}
       if(action.order==='train'){if(!state.buildings.some(b=>b.type==='training'&&b.status==='active'))return input;person.status='training';person.readyAt=state.day*1440+state.minutes+240;state.caseFile.assignedDetectives=state.caseFile.assignedDetectives.filter(id=>id!==person.id);}
       addJournal(state,`${person.name}: ordem de ${action.order==='rest'?'descanso':action.order==='train'?'treinamento':'investigação'} registrada.`,'staff');return state;
@@ -293,7 +320,10 @@ export function reducer(input, action) {
       return state;
     }
     case 'UPDATE_SETTINGS':
-      state.settings = { ...state.settings, ...action.settings };
+      for (const key of ['sound','highContrast','reducedMotion']) {
+        if (typeof action.settings?.[key] === 'boolean') state.settings[key] = action.settings[key];
+      }
+      if (Number.isFinite(action.settings?.fontScale)) state.settings.fontScale = clamp(action.settings.fontScale,1,1.5);
       return state;
     case 'SET_SPEED':
       state.speed = action.speed;
@@ -315,19 +345,151 @@ export function formatMoney(value) {
 }
 
 export function migrateState(value) {
-  if (!value || typeof value !== 'object') throw new Error('Save inválido');
-  if (!Number.isFinite(value.schemaVersion) || value.schemaVersion > SCHEMA_VERSION) throw new Error('Versão de save incompatível');
-  const base = createInitialState(value.seed || 25102026);
-  const merged = { ...base, ...value, settings: { ...base.settings, ...(value.settings || {}) } };
-  for(const key of ['staff','fleet','buildings','activeIncidents','completedIncidents','phoneLog','journal','candidatePool','campaignDecisions','caseQueue'])if(!Array.isArray(merged[key]))throw new Error('Save inválido: '+key);
-  if(!Number.isFinite(merged.finance?.cash)||!Number.isFinite(merged.day)||!Number.isFinite(merged.rngState))throw new Error('Save inválido: números inconsistentes');
-  if(merged.day<0||merged.minutes<0||merged.minutes>=1440||merged.finance.cash<0)throw new Error('Save inválido: relógio ou orçamento');
-  if(value.schemaVersion===1){
+  const fail = field => { throw new Error('Save inválido: ' + field + '. O arquivo original não foi alterado.'); };
+  const object = (item, field) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) fail(field);
+  };
+  let visited = 0;
+  function inspect(item, depth = 0) {
+    if (++visited > 100000 || depth > 30) fail('estrutura excessiva');
+    if (typeof item === 'number' && !Number.isFinite(item)) fail('número não finito');
+    if (typeof item === 'string' && item.length > 100000) fail('texto excessivo');
+    if (item && typeof item === 'object') {
+      for (const key of Object.keys(item)) {
+        if (['__proto__', 'prototype', 'constructor'].includes(key)) fail('campo não permitido');
+        inspect(item[key], depth + 1);
+      }
+    }
+  }
+  object(value, 'documento'); inspect(value);
+  if (!Number.isInteger(value.schemaVersion) || value.schemaVersion < 1 || value.schemaVersion > SCHEMA_VERSION) throw new Error('Versão de save incompatível');
+  for (const key of ['finance', 'city', 'contacts', 'caseFile']) object(value[key], key);
+  const source = structuredClone(value);
+  const base = createInitialState(source.seed ?? 25102026);
+  const merged = { ...base, ...source };
+  for (const key of ['finance', 'city', 'caseFile', 'settings', 'stats', 'flags']) {
+    if (source[key] !== undefined) object(source[key], key);
+    merged[key] = { ...base[key], ...(source[key] || {}) };
+  }
+  merged.contacts = { ...base.contacts };
+  for (const person of people) {
+    if (source.contacts[person.id] !== undefined) object(source.contacts[person.id], 'contato ' + person.id);
+    merged.contacts[person.id] = { ...base.contacts[person.id], ...(source.contacts[person.id] || {}) };
+  }
+  const numeric = (item, key, min = 0, max = Number.MAX_SAFE_INTEGER, integer = false) => {
+    if (!Number.isFinite(item[key]) || item[key] < min || item[key] > max || (integer && !Number.isInteger(item[key]))) fail(key);
+  };
+  const array = (item, key, max = 2000) => {
+    if (!Array.isArray(item[key]) || item[key].length > max) fail(key);
+  };
+  const text = (item, key) => { if (typeof item[key] !== 'string') fail(key); };
+  const identifier = (item, key = 'id') => { if (typeof item[key] !== 'string' || !/^[A-Za-z0-9_-]{1,100}$/.test(item[key])) fail('identificador '+key); };
+  for (const key of ['staff','fleet','buildings','activeIncidents','completedIncidents','phoneLog','journal','candidatePool','campaignDecisions','caseQueue','promises','history','notifications','news','constructionQueue']) array(merged,key);
+  numeric(merged, 'day', 0, 365000, true); numeric(merged, 'minutes', 0, 1439, true);
+  numeric(merged, 'seed', 0, 4294967295, true); numeric(merged, 'rngState', 0, 4294967295, true);
+  numeric(merged, 'sequence', 0, Number.MAX_SAFE_INTEGER, true);
+  numeric(merged, 'garageCapacity', 0, 500, true); numeric(merged, 'lastFinanceMonth', 0, 12167, true);
+  numeric(merged, 'operationsReadiness', 0, 100);
+  if (![0, 1, 3, 6].includes(merged.speed)) fail('velocidade');
+  text(merged, 'screen'); text(merged, 'storyStage'); text(merged, 'objective');
+  const screens=['title','intro','office','phone','map','precinct','fleet','staff','case','campaign','report','saves','settings','gallery'];
+  if (!screens.includes(merged.screen) || !screens.includes(merged.previousScreen)) fail('tela desconhecida');
+  if (!['new','first-call','second-call','intro','office'].includes(merged.storyStage)) fail('etapa narrativa');
+  for (const key of ['annualBudget','monthlyRelease','cash','emergencyReserve','payroll','operations','maintenance','buildings','forensics']) numeric(merged.finance,key);
+  if (merged.finance.arrears !== undefined) numeric(merged.finance, 'arrears');
+  array(merged.finance,'transactions');
+  for (const transaction of merged.finance.transactions) { object(transaction,'transação'); text(transaction,'label'); numeric(transaction,'amount',-Number.MAX_SAFE_INTEGER); }
+  for (const key of ['security','trust','integrity','health','resilience','morale','stability','politicalPressure']) numeric(merged.city,key,0,100);
+  array(merged.city,'districts',5);
+  if (merged.city.districts.length !== districts.length || new Set(merged.city.districts.map(item=>item?.id)).size !== districts.length) fail('distritos');
+  for (const district of merged.city.districts) {
+    object(district,'distrito');
+    if (!districts.some(item=>item.id===district.id)) fail('distrito desconhecido');
+    for (const key of ['traffic','crime','trust']) numeric(district,key,0,100);
+    text(district,'name'); array(district,'poi',100);
+  }
+  for (const contact of Object.values(merged.contacts)) {
+    for (const key of ['trust','respect','goodwill']) numeric(contact,key,0,100);
+    numeric(contact,'calls',0,Number.MAX_SAFE_INTEGER,true);
+  }
+  for (const key of Object.keys(base.stats)) numeric(merged.stats,key,0,Number.MAX_SAFE_INTEGER,true);
+  for (const key of ['sound','highContrast','reducedMotion']) if (typeof merged.settings[key] !== 'boolean') fail('preferência '+key);
+  numeric(merged.settings,'fontScale',0.9,1.5);
+  for (const collection of ['fleet','staff','buildings','candidatePool','activeIncidents','completedIncidents','caseQueue']) {
+    const ids = new Set();
+    for (const item of merged[collection]) {
+      object(item,collection); identifier(item);
+      if (ids.has(item.id)) fail('ID repetido em '+collection);
+      ids.add(item.id);
+    }
+  }
+  for (const vehicle of merged.fleet) {
+    text(vehicle,'name'); text(vehicle,'type'); text(vehicle,'status'); numeric(vehicle,'condition',0,100);
+    if (!['available','assigned','ordered','maintenance'].includes(vehicle.status)) fail('situação da viatura');
+    if (!['sedan','suv','transport'].includes(vehicle.type)) fail('classe da viatura');
+    if (!districtBase[vehicle.districtId]) fail('distrito da viatura');
+    if (vehicle.status === 'ordered') numeric(vehicle,'deliveryAt');
+    if (vehicle.status === 'maintenance') numeric(vehicle,'readyAt');
+  }
+  for (const person of [...merged.staff,...merged.candidatePool]) {
+    text(person,'name'); text(person,'role'); numeric(person,'salary'); numeric(person,'competence',0,100); numeric(person,'ethics',0,100);
+    if (person.fatigue !== undefined) numeric(person,'fatigue',0,100);
+  }
+  for (const room of merged.buildings) {
+    text(room,'name'); text(room,'type'); text(room,'status');
+    if (!['active','building'].includes(room.status)) fail('situação da sala');
+    numeric(room,'x',0,11,true); numeric(room,'y',0,7,true); numeric(room,'w',1,12,true); numeric(room,'h',1,8,true);
+    if (room.x+room.w>12 || room.y+room.h>8) fail('planta');
+    if (room.status==='building') numeric(room,'completesAt');
+  }
+  for (const incident of [...merged.activeIncidents,...merged.completedIncidents]) {
+    text(incident,'title'); text(incident,'stage');
+    if (!['pending','enroute','onscene','finished'].includes(incident.stage)) fail('etapa da ocorrência');
+    if (!eventTemplates.some(item=>item.type===incident.type) || !districtBase[incident.districtId]) fail('ocorrência desconhecida');
+    numeric(incident,'severity',1,10); numeric(incident,'progress',0,100);
+    numeric(incident,'x',0,100); numeric(incident,'y',0,100);
+    if (incident.stage==='enroute') numeric(incident,'eta',1,100000);
+    if (incident.route !== undefined) {
+      array(incident,'route',100);
+      for (const point of incident.route) { object(point,'rota'); numeric(point,'x',0,100); numeric(point,'y',0,100); }
+    }
+  }
+  array(merged.caseFile,'evidence',100); array(merged.caseFile,'actions'); array(merged.caseFile,'assignedDetectives',500);
+  numeric(merged.caseFile,'progress',0,100); text(merged.caseFile,'state'); text(merged.caseFile,'title'); text(merged.caseFile,'hypothesis');
+  if (merged.caseFile.evidence.length !== 3) fail('evidências');
+  for (const evidence of merged.caseFile.evidence) { object(evidence,'evidência'); identifier(evidence); text(evidence,'title'); numeric(evidence,'confidence',0,100); }
+  if (merged.caseFile.actions.some(action=>typeof action!=='string')) fail('ações de investigação');
+  for (const id of merged.caseFile.assignedDetectives) if (!merged.staff.some(person=>person.id===id)) fail('investigador ausente');
+  for (const task of merged.caseQueue) { text(task,'title'); numeric(task,'progress',0,100); numeric(task,'finishesAt'); }
+  for (const call of merged.phoneLog) { object(call,'chamada'); if (!merged.contacts[call.personId]) fail('contato desconhecido'); text(call,'topic'); text(call,'result'); }
+  for (const entry of merged.journal) { object(entry,'registro'); text(entry,'text'); }
+  for (const promise of merged.promises) { object(promise,'compromisso'); text(promise,'text'); numeric(promise,'dueDay'); }
+  const decisions = new Set();
+  for (const decision of merged.campaignDecisions) {
+    object(decision,'decisão');
+    const chapter = chapters.find(item=>item.id===decision.chapterId);
+    if (!chapter?.choices.some(choice=>choice.id===decision.choiceId) || decisions.has(decision.chapterId)) fail('decisão de campanha');
+    decisions.add(decision.chapterId);
+  }
+  if(source.schemaVersion===1){
     merged.activeIncidents=merged.activeIncidents.map(i=>({...i,spawnAt:merged.day*1440+merged.minutes,deadline:merged.day*1440+i.deadline}));
     merged.sequence=(merged.history?.length||0)+merged.day*100;
     merged.lastFinanceMonth=Math.floor(merged.day/30);
   }
-  merged.version='0.2.0';
+  // Recompute derived weather, but preserve the exact incident random generator.
+  merged.weather = weatherForDay(merged.seed,merged.day);
+  for (const news of merged.news) { object(news,'notícia'); text(news,'headline'); }
+  if (merged.campaignEnding !== null) {
+    object(merged.campaignEnding,'final');
+    if (!campaignOutcome(merged)) fail('final sem decisões');
+    text(merged.campaignEnding,'title'); text(merged.campaignEnding,'summary');
+    numeric(merged.campaignEnding,'score',0,100); object(merged.campaignEnding.metrics,'indicadores do final');
+    for (const key of ['trust','integrity','health','security']) numeric(merged.campaignEnding.metrics,key,0,100);
+    numeric(merged.campaignEnding.metrics,'cash'); numeric(merged.campaignEnding.metrics,'incidentsResolved');
+    array(merged.campaignEnding,'decisions',7);
+    if (typeof merged.campaignEnding.dismissed !== 'boolean') fail('estado do final');
+  } else if (source.schemaVersion < 3) merged.campaignEnding = campaignOutcome(merged);
+  merged.version='1.0.0';
   merged.schemaVersion = SCHEMA_VERSION;
   return merged;
 }

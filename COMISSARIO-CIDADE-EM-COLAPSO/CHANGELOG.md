@@ -16,3 +16,12 @@
 - Sete arcos, construção, manutenção, entregas, tarefas investigativas e migração de saves.
 - Oito testes de lógica aprovados; validação visual em navegador pendente.
 
+# v1.0.0 — Parte 3 — 25/10/2026
+
+- Rolagem móvel nativa e modo Mover mapa para liberar gestos da página.
+- Menus completos no celular, foco de teclado, modais acessíveis e guia inicial.
+- Autosave separado, três slots, importação confirmada e backups com integridade.
+- Clima, boletins, descanso, saúde e quatro desfechos após os sete arcos.
+- Áudio, ícones PWA, cache por versão e pacote HTML portátil.
+- 29 testes locais aprovados, incluindo stress de 100 seeds × 365 dias.
+

@@ -1,0 +1,47 @@
+name: Comissario - browser QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'COMISSARIO-CIDADE-EM-COLAPSO/**'
+      - '.github/workflows/comissario-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: COMISSARIO-CIDADE-EM-COLAPSO
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check source, assets and simulation
+        run: npm run check && npm test
+      - name: Install isolated browser test dependencies
+        run: |
+          npm install --no-save --prefix /tmp/comissario-qa playwright@1.56.1
+          /tmp/comissario-qa/node_modules/.bin/playwright install --with-deps chromium
+      - name: Generate portable offline HTML
+        run: node scripts/package.mjs "$RUNNER_TEMP/comissario-portable.html"
+      - name: Desktop and mobile browser flows
+        env:
+          NODE_PATH: /tmp/comissario-qa/node_modules
+          QA_ARTIFACT_DIR: /tmp/comissario-artifacts
+          BROWSER_PORTABLE_FILE: ${{ runner.temp }}/comissario-portable.html
+        run: node scripts/browser-check.cjs
+      - name: Save screenshots, backups and actual test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: comissario-browser-qa
+          path: /tmp/comissario-artifacts
+          if-no-files-found: warn
+          retention-days: 14

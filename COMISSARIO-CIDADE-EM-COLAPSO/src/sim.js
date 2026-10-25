@@ -2,6 +2,7 @@ import { eventTemplates } from './content.js';
 import { addJournal } from './state.js';
 import { currentChapter } from './campaign.js';
 import { roadNodes } from './routes.js';
+import { updateDailyWorld } from './world-detail.js';
 const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
 export const worldTime=s=>s.day*1440+s.minutes;
 export function rngStep(rngState){let x=rngState>>>0||0x6d2b79f5;x^=x<<13;x^=x>>>17;x^=x<<5;return{state:x>>>0,value:(x>>>0)/4294967296};}
@@ -48,7 +49,7 @@ function processStep(state,step){
   if(state.caseFile.progress>=35){state.caseFile.evidence[1].found=true;state.caseFile.evidence[1].confidence=62;}
   if(state.caseFile.progress>=65){state.caseFile.evidence[2].found=true;state.caseFile.evidence[2].confidence=82;}
   if(state.day!==oldDay){
-    for(const s of state.staff)if(s.status!=='rest')s.fatigue=clamp(s.fatigue+2);
+    updateDailyWorld(state);
     for(const p of state.promises)if(!p.done&&!p.missed&&p.dueDay<state.day){p.missed=true;state.city.politicalPressure=clamp(state.city.politicalPressure+3);addJournal(state,'Compromisso vencido: '+p.text+'; pressão política +3.','warning');}
     const month=Math.floor(state.day/30);
     if(month>state.lastFinanceMonth){
@@ -59,7 +60,7 @@ function processStep(state,step){
       state.finance.transactions=state.finance.transactions.slice(0,80);
       state.lastFinanceMonth=month;addJournal(state,'Fechamento mensal: liberação US$ '+release.toLocaleString('pt-BR')+'; compromissos US$ '+expenses.toLocaleString('pt-BR')+(expenses>paid?'; saldo insuficiente registrado em obrigações':'')+'.','finance');
     }
-    state.objective=currentChapter(state).title+' · consulte o briefing e responda às demandas.';
+    state.objective=state.campaignEnding ? (state.campaignEnding.dismissed ? 'Gestão contínua: acompanhe ocorrências, orçamento e compromissos.' : state.campaignEnding.title) : currentChapter(state).title+' · consulte o briefing e responda às demandas.';
     state.city.stability=Math.round((state.city.security+state.city.trust+state.city.health+state.city.integrity)/4);
     if(state.activeIncidents.length<3)spawnIncident(state);
   }

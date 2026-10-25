@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "checkedAt": "2026-10-25T19:45:01Z",
+  "unitAndIntegration": {
+    "passed": 29,
+    "failed": 0
+  },
+  "stress": {
+    "seeds": 100,
+    "daysPerSeed": 365,
+    "result": "passed"
+  },
+  "assets": {
+    "images": 15,
+    "characters": 12,
+    "result": "hashes and paths verified"
+  },
+  "modules": 17,
+  "localBrowser": "blocked by environment",
+  "githubBrowser": "pending workflow",
+  "physicalAndroid": "not tested"
+}

@@ -1,12 +1,12 @@
 {
   "name": "COMISSÁRIO — CIDADE EM COLAPSO",
-  "version": "0.2.0",
-  "lot": 2,
-  "build": "lote2-2026.10.25",
-  "builtAt": "2026-10-25T16:29:53Z",
-  "schemaVersion": 2,
+  "version": "1.0.0",
+  "lot": 3,
+  "build": "parte3-2026.10.25",
+  "builtAt": "2026-10-25T19:45:01Z",
+  "schemaVersion": 3,
   "runtime": "Buildless HTML/CSS/ES modules",
   "source": "Bíblia Mestre Codex v1.0 — 38 abas analisadas",
-  "tests": "8 testes aprovados; módulos e 15 imagens verificados",
-  "browserQA": "Não executado: Chromium bloqueado pelo ambiente"
+  "tests": "TEST_RESULTS.json",
+  "limitations": "AUDIT.md"
 }

@@ -1,9 +1,18 @@
 {
   "name": "Comissário — Cidade em Colapso",
   "short_name": "Comissário",
-  "description": "Jogo estratégico de gestão policial e proteção cívica.",
+  "id": "./",
+  "description": "Parte 3 — comando, investigação e gestão de uma cidade em crise.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "any",
+  "categories": ["games", "strategy"],
+  "icons": [
+    { "src": "./assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./assets/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
   "background_color": "#07131d",
   "theme_color": "#07131d",
   "lang": "pt-BR"
