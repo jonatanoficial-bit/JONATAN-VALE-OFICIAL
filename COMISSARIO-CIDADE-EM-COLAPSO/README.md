@@ -6,6 +6,8 @@ Parte 4 · v1.1.0 · Vale Games. Simulador narrativo de comando e gestão em uma
 
 https://jonatanoficial-bit.github.io/JONATAN-VALE-OFICIAL/COMISSARIO-CIDADE-EM-COLAPSO/
 
+Download da parte 4: https://github.com/jonatanoficial-bit/JONATAN-VALE-OFICIAL/raw/refs/heads/main/COMISSARIO-CIDADE-EM-COLAPSO/release/COMISSARIO-CIDADE-EM-COLAPSO-PARTE-4-v1.1.0.zip
+
 No celular, role a página normalmente. No centro de despacho, **Mover mapa** ativa arraste e pinça; **Rolar página** devolve o gesto à página. Os menus inferiores deslizam horizontalmente.
 
 No ZIP, abra **JOGAR.html** em Chrome, Edge, Firefox ou Safari recentes. Essa edição contém código e imagens no próprio arquivo. Para a edição modular, execute `python -m http.server 8080` na pasta e abra http://localhost:8080. Se o navegador bloquear armazenamento em arquivos locais, use o servidor local e exporte backups.

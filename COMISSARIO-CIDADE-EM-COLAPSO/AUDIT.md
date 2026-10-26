@@ -2,7 +2,15 @@
 
 ## Validação
 
-Checagem de sintaxe de 20 módulos, hashes das 15 imagens, ícones PWA e cobertura estática do cache offline aprovada. A suíte da parte 4 e a validação de navegador estão em execução; resultados confirmados serão registrados em TEST_RESULTS.json e qa/browser-report.json. Resultados da parte 3 não constituem validação desta versão.
+42 testes de lógica e integração aprovados, incluindo 100 seeds econômicas por 365 dias, dez carreiras geridas por um ano e uma por cinco anos. Checagem de sintaxe de 20 módulos, hashes das 15 imagens, ícones PWA e cobertura estática do cache offline aprovada.
+
+Chromium real no GitHub Actions: PASS em 1440×1000, 390×844 e 360×640, com zero erros de página. Exercitados prólogo e rolagem móvel, posse tranquila, primeira ligação agendada, 12 contatos, foco e Escape, aquisição, contratação, mapa/despacho/resolução, obras/diligências, preferências, galeria, exportação/importação e migração v3. Demissão acionada pela interface, arquivo de recuperação pré-avaliação restaurado e arquivos manuais preservados.
+
+HTML portátil aberto via file:// com rede desativada: PASS, zero solicitações de rede. SHA-256 do arquivo efetivamente testado: 86332ae042ced3dc28302f7209782b4eae1e1a7feb6480c52c88097b87d1bcab. Código verificado: d203056f1f74c3a120ac15ed121d5451386245af. Execução: https://github.com/jonatanoficial-bit/JONATAN-VALE-OFICIAL/actions/runs/40321492035. Relatórios completos em TEST_RESULTS.json e qa/browser-report.json.
+
+O teste inicial revelou que a restauração ainda dependia do próximo autosave; isso foi corrigido antes da execução aprovada. A versão testada também concluiu a implantação pelo GitHub Pages. Service worker foi bloqueado deliberadamente nas rotas de teste: instalação PWA não é declarada validada.
+
+Capturas do painel de carreira em desktop/mobile e do gabinete em 360 px foram inspecionadas. Personagens aparecem com as composições originais; a página longa permanece rolável. Avisos temporários vistos nas capturas pertencem ao teste com service worker bloqueado.
 
 ## Alterações
 

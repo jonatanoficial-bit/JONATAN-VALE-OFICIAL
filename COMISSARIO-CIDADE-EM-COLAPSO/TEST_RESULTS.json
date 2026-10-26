@@ -1,16 +1,44 @@
 {
   "version": "1.1.0",
-  "status": "VALIDATION_IN_PROGRESS",
-  "unitAndIntegration": { "passed": 42, "failed": 0 },
-  "stress": { "legacyEconomy": "100 seeds x 365 days passed", "managedCareer": "10 seeds x 365 days plus one 5-year career passed" },
+  "checkedAt": "2026-10-26T12:20:45.018Z",
+  "status": "PASS",
+  "unitAndIntegration": {
+    "passed": 42,
+    "failed": 0
+  },
+  "stress": {
+    "legacyEconomy": {
+      "seeds": 100,
+      "daysPerSeed": 365,
+      "result": "PASS"
+    },
+    "managedCareer": {
+      "seeds": 10,
+      "daysPerSeed": 365,
+      "longCareerDays": 1825,
+      "result": "PASS"
+    }
+  },
   "assets": {
     "images": 15,
     "characters": 12,
     "result": "hashes and paths verified"
   },
   "modules": 20,
+  "localBrowser": "blocked by environment; real browser executed in GitHub Actions",
   "githubBrowser": {
-    "result": "PENDING"
+    "result": "PASS",
+    "commit": "d203056f1f74c3a120ac15ed121d5451386245af",
+    "run": "https://github.com/jonatanoficial-bit/JONATAN-VALE-OFICIAL/actions/runs/40321492035",
+    "viewports": [
+      "1440x1000",
+      "390x844",
+      "360x640"
+    ],
+    "portableOffline": "PASS",
+    "portableSha256": "86332ae042ced3dc28302f7209782b4eae1e1a7feb6480c52c88097b87d1bcab",
+    "errors": 0,
+    "serviceWorker": "not exercised in browser; static coverage verified"
   },
   "physicalAndroid": "not tested"
 }
