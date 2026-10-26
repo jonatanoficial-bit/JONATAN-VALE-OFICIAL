@@ -1,7 +1,7 @@
 import test, { afterEach, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createInitialState, SCHEMA_VERSION } from '../src/state.js';
-import { saveGame, loadGame, loadLatestGame, listSaves, listAutoSave, serializeSave, importSave } from '../src/persistence.js';
+import { saveGame, loadGame, loadLatestGame, listSaves, listAutoSave, listCareerSafety, CAREER_SAFETY_SLOT, serializeSave, importSave } from '../src/persistence.js';
 
 const originalStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
 const originalDatabase = Object.getOwnPropertyDescriptor(globalThis, 'indexedDB');
@@ -90,6 +90,45 @@ test('backup JSON com checksum preserva RNG e recusa alteração no conteúdo', 
   await assert.rejects(importSave(fileFrom(JSON.stringify(envelope))), /integridade/);
 });
 
+test('recuperação da carreira usa arquivo independente e nunca substitui Continuar', async () => {
+  const live = createInitialState(830);
+  await saveGame(live, 0, 'auto');
+  await saveGame(live, 2, 'manual');
+  const automaticRecord = storage.get('comissario-save-0');
+  const manualRecord = storage.get('comissario-save-2');
+  clock += 1000;
+  const recovery = { ...live, day: 11, minutes: 570 };
+  await saveGame(recovery, CAREER_SAFETY_SLOT);
+  const recovered = await loadGame(CAREER_SAFETY_SLOT);
+  assert.equal(recovered.day, 11);
+  assert.equal(recovered.minutes, 570);
+  assert.equal(recovered.rngState, live.rngState);
+  assert.equal(recovered.schemaVersion, SCHEMA_VERSION);
+  assert.equal((await listCareerSafety()).kind, 'career-safety');
+  assert.equal(JSON.parse(storage.get('comissario-save-4')).kind, 'career-safety');
+  assert.equal(storage.get('comissario-save-0'), automaticRecord);
+  assert.equal(storage.get('comissario-save-2'), manualRecord);
+  assert.deepEqual((await listSaves()).map(slot => slot.slot), [1, 2, 3]);
+  assert.equal((await loadLatestGame()).day, 0, 'Recovery must not override a newer live-save choice');
+  storage.delete('comissario-save-0');
+  storage.delete('comissario-save-2');
+  assert.equal(await loadLatestGame(), null, 'A recovery-only archive is not a Continue save');
+});
+
+test('recuperação corrompida preserva o arquivo e não impede retomar autosave', async () => {
+  const live = createInitialState(831);
+  await saveGame(live, 0, 'auto');
+  await saveGame(live, CAREER_SAFETY_SLOT, 'career-safety');
+  const recoveryRecord = JSON.parse(storage.get('comissario-save-4'));
+  recoveryRecord.checksum = '00000000';
+  const damaged = JSON.stringify(recoveryRecord);
+  storage.set('comissario-save-4', damaged);
+  await assert.rejects(loadGame(CAREER_SAFETY_SLOT), /integridade/);
+  assert.equal((await listCareerSafety()).corrupt, true);
+  assert.equal(storage.get('comissario-save-4'), damaged);
+  assert.equal((await loadLatestGame()).seed, live.seed);
+});
+
 test('importação migra JSON antigo sem modificar o objeto original', async () => {
   const original = createInitialState(13);
   original.schemaVersion = 1;
@@ -140,7 +179,7 @@ test('armazenamento indisponível orienta exportar e rejeita slots inválidos', 
   } });
   await assert.rejects(saveGame(createInitialState(5), 1), /Exporte seu progresso/);
   await assert.rejects(loadGame(1), /Exporte seu progresso/);
-  await assert.rejects(saveGame(createInitialState(5), 4), /Slot inválido/);
+  await assert.rejects(saveGame(createInitialState(5), 5), /Slot inválido/);
 });
 
 test('importação recusa arquivos grandes, esquema futuro e estruturas inválidas', async () => {

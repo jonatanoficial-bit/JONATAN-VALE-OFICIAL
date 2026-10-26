@@ -66,10 +66,11 @@ test('investigação pausa sem investigador e respeita custo interno da perícia
 
 test('final usa consequências da última escolha e preserva resultado na gestão contínua', () => {
   let state=createInitialState(41);
-  state.day=240;
+  state.day=0;
   state.stats.incidentsResolved=3;
   const choices=['community','dialogue','independent','joint','protection','grant','transparency'];
   for (const [index,chapter] of chapters.entries()) {
+    state.day=Math.max(chapter.fromDay,state.campaignDecisions.length?state.campaignDecisions.at(-1).day+2:0);
     assert.equal(state.campaignEnding,null);
     state=reducer(state,{type:'CAMPAIGN_DECISION',payload:{chapter,choice:chapter.choices.find(choice=>choice.id===choices[index])}});
   }
@@ -92,7 +93,7 @@ test('migração v2 preserva RNG, chamadas, IDs, obras e rejeita objetos malform
   delete source.weather; delete source.news; delete source.campaignEnding;
   const original=JSON.stringify(source);
   const migrated=migrateState(source);
-  assert.equal(migrated.schemaVersion,3);
+  assert.equal(migrated.schemaVersion,4);
   assert.equal(migrated.rngState,source.rngState);
   assert.deepEqual(migrated.fleet,source.fleet);
   assert.equal(JSON.stringify(source),original);
@@ -131,7 +132,7 @@ test('rotação normal recupera fadiga e notícias são limitadas a 30 dias', ()
   assert.deepEqual(end.weather,weatherForDay(87,40));
 });
 
-test('stress: 100 seeds por 365 dias sem estado inválido, chamadas repetidas ou bloqueio de campanha', () => {
+test('economia e migração: 100 seeds por 365 dias e compromissos sequenciais', () => {
   for(let seed=1;seed<=100;seed++) {
     const initial=createInitialState(seed);
     initial.promises.push({id:'PR-STRESS',text:'Compromisso de teste',dueDay:2,done:false});
@@ -149,7 +150,7 @@ test('stress: 100 seeds por 365 dias sem estado inválido, chamadas repetidas ou
     assert.equal(state.phoneLog.length,0);
     assert.equal(state.campaignEnding,null);
     assert.doesNotThrow(()=>migrateState(state));
-    for(const chapter of chapters) state=reducer(state,{type:'CAMPAIGN_DECISION',payload:{chapter,choice:chapter.choices.find(choice=>!(choice.effects.cash<0))||chapter.choices[0]}});
+    for(const chapter of chapters){state.day=Math.max(state.day,chapter.fromDay,state.campaignDecisions.length?state.campaignDecisions.at(-1).day+2:0);state=reducer(state,{type:'CAMPAIGN_DECISION',payload:{chapter,choice:chapter.choices.find(choice=>!(choice.effects.cash<0))||chapter.choices[0]}});}
     assert.ok(state.campaignEnding,`seed ${seed}: final acessível após sete decisões`);
   }
 });

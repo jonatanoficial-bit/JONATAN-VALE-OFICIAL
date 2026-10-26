@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const out = resolve(process.argv[2] || '/workspace/releases/COMISSARIO-PARTE-3-v1.0.0-JOGAR.html');
+const out = resolve(process.argv[2] || '/workspace/releases/COMISSARIO-PARTE-4-v1.1.0-JOGAR.html');
 const assets = Object.create(null);
 for (const folder of ['backgrounds', 'references', 'icons']) {
   for (const name of readdirSync(resolve(root, 'assets', folder))) {

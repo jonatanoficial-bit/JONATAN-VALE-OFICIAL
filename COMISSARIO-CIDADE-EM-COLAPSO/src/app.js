@@ -1,15 +1,15 @@
 import { people, roomCatalog } from './content.js';
 import { additionalRooms, chapters, caseTasks } from './campaign.js';
-import { topics, topicRestriction } from './phone.js';
+import { topics, topicRestriction, wasTopicUsed } from './phone.js';
 import { bindMapControls } from './map.js';
-import { exportSave, importSave, listSaves, listAutoSave, loadLatestGame, loadGame, saveGame } from './persistence.js';
+import { exportSave, importSave, listSaves, listAutoSave, listCareerSafety, loadLatestGame, loadGame, saveGame } from './persistence.js';
 import { playCue, setAudioActive } from './audio.js';
 import { t } from './i18n.js';
 import { renderApp, lookupOpeningChoice, lookupVehicle } from './render.js';
-import { advanceWorld, spawnIncident } from './sim.js';
+import { advanceWorld, worldTime } from './sim.js';
 import { createInitialState, reducer } from './state.js';
 const root=document.querySelector('#app'),toastRegion=document.querySelector('#toast-region');
-let state=createInitialState(),ui={hasSave:false,saveSlots:null,selectedIncident:null,selectedRoom:null,selectedContact:'P04',callResult:null,selectedArt:null};
+let state=createInitialState(),ui={hasSave:false,saveSlots:null,selectedIncident:null,selectedIncoming:null,selectedRoom:null,selectedContact:'P04',callResult:null,selectedArt:null};
 let saveChain=Promise.resolve(),restoreFocusKey=null,installPrompt=null;
 const focusKey=element=>element?.dataset?JSON.stringify(Object.entries(element.dataset).sort()):null;
 const focusable='button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),[tabindex="0"]';
@@ -24,6 +24,7 @@ function render(){
  document.body.classList.toggle('dialog-open',!!root.querySelector('[role="dialog"]'));
  setAudioActive(state.settings.sound&&!document.hidden);
  document.documentElement.classList.toggle('high-contrast',state.settings.highContrast);document.documentElement.classList.toggle('reduced-motion',state.settings.reducedMotion);document.documentElement.style.setProperty('--font-scale',state.settings.fontScale);
+ if(state.career?.status==='dismissed')root.querySelectorAll('[data-action]').forEach(element=>{if(!['navigate','new-game','confirm-new','continue','open-saves','quick-save','save-slot','confirm-save','load-slot','export-save','close-modal','view-art','install-app','confirm-import'].includes(element.dataset.action))element.disabled=true;});
  for(const item of scrolls){const element=root.querySelector(item.selector);if(element){element.scrollTop=item.top;element.scrollLeft=item.left;}}
  window.scrollTo({top:pageScroll,behavior:'instant'});
  if(state.screen==='map')bindMapControls(root);
@@ -34,15 +35,27 @@ function render(){
 }
 function autosave(){const snapshot=structuredClone(state);saveChain=saveChain.then(()=>saveGame(snapshot,0,'autosave')).then(saved=>{state.lastSavedAt=saved.lastSavedAt;ui.hasSave=true;}).catch(()=>toast('O salvamento automático falhou. Exporte um backup.','warning'));return saveChain;}
 function commit(action,{save=false,message=''}={}){const next=reducer(state,action);if(next===state){toast('Verifique os recursos, a disponibilidade e os requisitos dessa ação.','warning');return false;}state=next;render();if(save)autosave();if(message)toast(message,'success');return true;}
-function navigate(screen){ui.selectedIncident=null;ui.callResult=null;ui.selectedArt=null;commit({type:'NAVIGATE',screen});const main=root.querySelector('.main-content');if(main)main.scrollTop=0;window.scrollTo({top:0,behavior:'instant'});}
-async function refreshSaves(){[ui.saveSlots,ui.autoSave]=await Promise.all([listSaves(),listAutoSave()]);ui.hasSave=[...ui.saveSlots,ui.autoSave].some(s=>s&&!s.empty&&!s.corrupt);}
+function navigate(screen){ui.selectedIncident=null;ui.selectedIncoming=null;ui.callResult=null;ui.selectedArt=null;commit({type:'NAVIGATE',screen});const main=root.querySelector('.main-content');if(main)main.scrollTop=0;window.scrollTo({top:0,behavior:'instant'});}
+async function refreshSaves(){[ui.saveSlots,ui.autoSave,ui.careerSafety]=await Promise.all([listSaves(),listAutoSave(),listCareerSafety()]);ui.hasSave=[...ui.saveSlots,ui.autoSave].some(s=>s&&!s.empty&&!s.corrupt);}
 async function quickSave(slot=1){try{const saved=await saveGame(state,slot,'manual');state.lastSavedAt=saved.lastSavedAt;await refreshSaves();render();toast(t('save.saved',{slot}),'success');}catch(e){toast(e.message,'warning');}}
-async function loadSlot(slot=null){try{await saveChain;const loaded=slot===null?await loadLatestGame():await loadGame(slot);if(!loaded)return toast('Este arquivo está vazio.','warning');state=loaded;state.speed=0;if(['title','saves','gallery','settings'].includes(state.screen))state.screen=state.storyStage==='office'?'office':'intro';ui={...ui,selectedIncident:null,callResult:null,selectedArt:null,confirm:null};render();toast(t('save.restored'),'success');}catch(e){toast(e.message,'warning');}}
-function openingIncidents(){if(!state.activeIncidents.length&&!state.completedIncidents.length){spawnIncident(state,'protest');spawnIncident(state,'traffic');}}
-function advance(minutes){state=advanceWorld(state,minutes);render();autosave();}
+async function loadSlot(slot=null){try{await saveChain;const loaded=slot===null?await loadLatestGame():await loadGame(slot);if(!loaded)return toast('Este arquivo está vazio.','warning');state=loaded;state.speed=0;if(['title','saves','gallery','settings'].includes(state.screen))state.screen=state.storyStage==='office'?'office':'intro';ui={...ui,selectedIncident:null,selectedIncoming:null,callResult:null,selectedArt:null,confirm:null};render();toast(t('save.restored'),'success');}catch(e){toast(e.message,'warning');}}
+function advance(minutes,{automatic=false}={}){
+ if(state.career?.status==='dismissed')return toast('O mandato terminou. Você pode consultar o histórico ou começar outra carreira.','warning');
+ const before=state,previousStop=state.director?.lastStop;
+ const next=advanceWorld(state,minutes,{interrupt:true});
+ const stopped=next.director?.lastStop&&JSON.stringify(next.director.lastStop)!==JSON.stringify(previousStop);
+ const dismissed=next.career?.status==='dismissed'&&before.career?.status!=='dismissed';
+ if(dismissed){const snapshot=structuredClone(before);saveChain=saveChain.then(()=>saveGame(snapshot,4,'career-safety')).then(()=>{ui.careerSafety={slot:4,day:snapshot.day,savedAt:new Date().toISOString()};}).catch(()=>toast('Não foi possível criar o backup anterior à decisão. Seus arquivos manuais continuam disponíveis.','warning'));next.screen='campaign';ui.selectedIncident=null;ui.selectedIncoming=null;}
+ state=next;
+ if(ui.selectedIncident&&!state.activeIncidents.some(i=>i.id===ui.selectedIncident))ui.selectedIncident=null;
+ if(ui.selectedIncoming&&!state.incomingCalls?.some(c=>c.id===ui.selectedIncoming&&c.status==='ringing'))ui.selectedIncoming=null;
+ render();
+ if(stopped){cue(state.director.lastStop.type==='call'?'call':'warning');toast(state.director.lastStop.title+' O relógio foi pausado.','info');}
+ if(!automatic||stopped||before.day!==state.day||dismissed)autosave();
+}
 async function onImport(event){try{const imported=await importSave(event.target.files?.[0]);ui.pendingImport=imported;ui.confirm={kind:'import',title:'Importar campanha',text:'Escolha o arquivo de destino. O progresso atual será preservado no salvamento automático antes da importação.'};render();}catch(e){toast(e.message,'warning');}}
-function closeModal(){ui.selectedIncident=null;ui.callResult=null;ui.selectedArt=null;ui.confirm=null;ui.pendingImport=null;render();}
-function startNewGame(){const preferences={...state.settings};state=createInitialState(Date.now()>>>0);state.settings=preferences;state.screen='intro';ui={...ui,selectedIncident:null,callResult:null,selectedArt:null,confirm:null};render();}
+function closeModal(){ui.selectedIncident=null;ui.selectedIncoming=null;ui.callResult=null;ui.selectedArt=null;ui.confirm=null;ui.pendingImport=null;render();}
+function startNewGame(){const preferences={...state.settings};state=createInitialState(Date.now()>>>0);state.settings=preferences;state.screen='intro';ui={...ui,selectedIncident:null,selectedIncoming:null,callResult:null,selectedArt:null,confirm:null};render();}
 root.addEventListener('click',async event=>{
  const target=event.target.closest('[data-action]');if(!target||target.disabled)return;const action=target.dataset.action;cue(action==='phone-call'?'call':'click');
  if(action==='new-game'){if(ui.hasSave){ui.confirm={kind:'new',title:'Iniciar outra gestão?',text:'Os arquivos manuais serão mantidos. O salvamento automático passará a acompanhar a nova campanha após a primeira decisão.'};render();}else startNewGame();return;}
@@ -56,12 +69,19 @@ root.addEventListener('click',async event=>{
  if(action==='install-app'){if(!installPrompt)return toast('No menu do navegador, use Instalar aplicativo ou Adicionar à tela inicial.');await installPrompt.prompt();installPrompt=null;ui.canInstall=false;render();return;}
  if(action==='restart'){state=createInitialState();return render();}
  if(action==='open-saves'){await refreshSaves();navigate('saves');return;}
- if(action==='opening-choice'){const choice=lookupOpeningChoice(target.dataset.choice);commit({type:'OPENING_CHOICE',choice});if(choice.id!=='refuse')openingIncidents();render();autosave();return;}
- if(action==='accept-second-call'){commit({type:'ACCEPT_SECOND_CALL'});openingIncidents();render();autosave();return;}
+ if(action==='opening-choice'){const choice=lookupOpeningChoice(target.dataset.choice);commit({type:'OPENING_CHOICE',choice});render();autosave();return;}
+ if(action==='accept-second-call'){commit({type:'ACCEPT_SECOND_CALL'});render();autosave();return;}
+ if(action==='answer-incoming'){ui.selectedIncoming=target.dataset.id;ui.selectedIncident=null;ui.callResult=null;state=reducer(state,{type:'SET_SPEED',speed:0});render();return;}
+ if(action==='respond-incoming'){const call=state.incomingCalls?.find(c=>c.id===target.dataset.id),choice=call?.choices.find(c=>c.id===target.dataset.choice);if(!call||!choice)return;if(commit({type:'RESPOND_INCOMING_CALL',id:call.id,choiceId:choice.id},{save:true})){ui.selectedIncoming=null;ui.callResult={personId:call.personId,title:call.title,result:choice.result};render();}return;}
+ if(action==='defer-incoming'){if(commit({type:'DEFER_INCOMING_CALL',id:target.dataset.id},{save:true,message:'A secretaria registrou o retorno. A ligação reaparecerá no horário combinado.'})){ui.selectedIncoming=null;render();}return;}
+ if(action==='crisis-decision')return commit({type:'CRISIS_DECISION',id:target.dataset.id,choiceId:target.dataset.choice},{save:true,message:'Decisão comunicada. Aguarde a atualização das equipes.'});
+ if(action==='career-plan')return commit({type:'CAREER_PLAN',plan:target.dataset.plan},{save:true,message:'Plano autorizado. Os resultados exigem tempo de execução.'});
+ if(action==='pay-arrears')return commit({type:'PAY_ARREARS'},{save:true,message:'Obrigações regularizadas até o limite do caixa disponível.'});
+ if(action==='wait-next-event'){advance(480);return;}
  if(action==='select-contact'){ui.selectedContact=target.dataset.id;navigate('phone');return;}
  if(action==='phone-call'){
   const p=target.dataset.person,t=topics[p]?.find(t=>t.id===target.dataset.topic);if(!t)return;
-  const reason=topicRestriction(state,t),already=state.phoneLog.some(c=>c.personId===p&&c.topic===t.id);
+  const reason=topicRestriction(state,t),already=wasTopicUsed(state,p,t.id);
   const result=reason?reason+' A secretaria registrou a consulta e indicou os requisitos.':already?'Esta pauta já foi registrada. O acordo permanece válido e os efeitos não se repetem.':t.result;
   if(!reason&&!already){if(!commit({type:'PHONE_CALL',payload:{personId:p,topic:t.id,result,effects:t.effects}},{save:true}))return;}
   ui.callResult={personId:p,title:t.title,result};render();return;
@@ -79,8 +99,7 @@ root.addEventListener('click',async event=>{
  if(action==='maintain-vehicle')return commit({type:'MAINTAIN_VEHICLE',id:target.dataset.id},{save:true,message:'Veículo encaminhado à manutenção.'});
  if(action==='staff-order')return commit({type:'STAFF_ORDER',id:target.dataset.id,order:target.dataset.order},{save:true,message:'Ordem registrada na escala do profissional.'});
  if(action==='campaign-decision'){const chapter=chapters.find(c=>c.id===target.dataset.chapter),choice=chapter.choices.find(c=>c.id===target.dataset.choice);return commit({type:'CAMPAIGN_DECISION',payload:{chapter,choice}},{save:true,message:'Decisão registrada. O legado da gestão foi atualizado.'});}
- if(action==='next-chapter'){const next=chapters.find(c=>c.fromDay>state.day);if(!next)return toast('Todos os arcos estão abertos. A carreira continua.');advance((next.fromDay-state.day)*1440);toast('Novo marco disponível. Revise o briefing antes de decidir.');return;}
- if(action==='advance-day'){advance(1440);toast('Dia '+(state.day+1)+' iniciado. Agenda e cidade atualizadas.');return;}
+ if(action==='next-chapter'||action==='advance-day'){advance(480);return;}
  if(action==='advance-time'){advance(Number(target.dataset.minutes));return;}
  if(action==='set-speed')return commit({type:'SET_SPEED',speed:Number(target.dataset.speed)});
  if(action==='quick-save')return quickSave(1);
@@ -99,7 +118,7 @@ document.addEventListener('keydown',event=>{
  if(event.code==='Space'&&document.activeElement?.tagName!=='BUTTON'&&state.storyStage==='office'){event.preventDefault();commit({type:'SET_SPEED',speed:state.speed?0:1});}
  if(['1','2','3'].includes(event.key)&&state.storyStage==='office')commit({type:'SET_SPEED',speed:[1,3,6][Number(event.key)-1]});
 });
-setInterval(()=>{if(document.hidden||!state.speed||state.storyStage!=='office'||['settings','saves','gallery'].includes(state.screen)||ui.callResult||ui.selectedArt||ui.confirm||document.activeElement?.tagName==='INPUT'||root.querySelector('button:active'))return;const day=state.day;state=advanceWorld(state,10*state.speed);render();if(state.day!==day)autosave();},3200);
+setInterval(()=>{if(document.hidden||!state.speed||state.storyStage!=='office'||state.career?.status==='dismissed'||['settings','saves','gallery'].includes(state.screen)||root.querySelector('[role="dialog"]')||document.activeElement?.tagName==='INPUT'||root.querySelector('button:active'))return;advance(state.speed,{automatic:true});},2000);
 setInterval(()=>{if(state.storyStage==='office')autosave();},30000);
 document.addEventListener('visibilitychange',()=>{setAudioActive(!document.hidden&&state.settings.sound);if(document.hidden&&state.storyStage==='office')autosave();});
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;ui.canInstall=true;if(state.screen==='settings')render();});

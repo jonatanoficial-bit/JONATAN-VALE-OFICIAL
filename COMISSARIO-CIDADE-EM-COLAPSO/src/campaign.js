@@ -36,8 +36,17 @@ export const chapters = [
   ]}
 ];
 
-export const currentChapter = state => [...chapters].reverse().find(c => state.day >= c.fromDay) || chapters[0];
-export const pendingChapter = state => chapters.find(c => state.day >= c.fromDay && !state.campaignDecisions?.some(d => d.chapterId === c.id));
+export function pendingChapter(state){
+  if(state.career?.status==='dismissed')return null;
+  const next=chapters.find(c=>!state.campaignDecisions?.some(d=>d.chapterId===c.id));
+  if(!next)return null;
+  const previous=state.campaignDecisions?.at(-1);
+  const available=Math.max(next.fromDay,previous?previous.day+2:0);
+  return state.day>=available?next:null;
+}
+export function currentChapter(state){
+  return pendingChapter(state)||chapters.find(c=>c.id===state.campaignDecisions?.at(-1)?.chapterId)||chapters[0];
+}
 
 export const caseTasks = [
   {id:'cameras',title:'Revisar câmeras do armazém',description:'Conferir horários e integridade do arquivo.',duration:120,cost:0,progress:18},

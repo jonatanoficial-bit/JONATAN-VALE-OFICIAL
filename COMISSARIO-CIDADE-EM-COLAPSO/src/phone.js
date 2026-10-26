@@ -20,3 +20,4 @@ export function topicRestriction(state,item){
   if(item.gate==='national' && !(state.day>=150 && state.flags.federalNexus))return 'Canal excepcional: exige cooperação federal e arco estadual.';
   return null;
 }
+export const wasTopicUsed=(state,personId,topicId)=>state.completedPhoneTopics?.includes(personId+':'+topicId)||state.phoneLog.some(c=>c.personId===personId&&c.topic===topicId);

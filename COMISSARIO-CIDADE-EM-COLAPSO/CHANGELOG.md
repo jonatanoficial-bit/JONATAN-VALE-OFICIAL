@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0 — Parte 4 — 26/10/2026
+
+- Carreira contínua, agenda persistente e posse sem ocorrências instantâneas.
+- Ligações recebidas com prazo, retorno e respostas sem repetição de benefícios.
+- Crises municipais, estaduais e federais em três etapas temporizadas.
+- Revisões mensais, advertência, acompanhamento, recuperação e exoneração.
+- Planos temporizados, quitação de obrigações e proteção de verbas telefônicas.
+- Marcos graduais, sem encerramento obrigatório do mandato.
+- Recuperação pré-demissão separada dos arquivos manuais; migração para schema 4.
+- Preservados fundos, personagens e rolagem móvel das partes anteriores.
+
 ## 0.1.0 — 2026-10-25
 
 - Entrega inicial do Lote 1 jogável.

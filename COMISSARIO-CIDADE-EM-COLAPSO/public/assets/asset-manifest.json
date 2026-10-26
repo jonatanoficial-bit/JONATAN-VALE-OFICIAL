@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "imageManifest": "../../assets/manifest.json",
   "portraitMapping": "../../src/art.js",
   "included": "5 fundos limpos e 10 composições C01–C10",

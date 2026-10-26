@@ -1,10 +1,12 @@
 import { candidates, districts, eventTemplates, fixedRooms, people } from './content.js';
 import { districtBase, routeBetween } from './routes.js';
 import { topics, topicRestriction } from './phone.js';
-import { chapters } from './campaign.js';
+import { chapters, pendingChapter } from './campaign.js';
 import { campaignOutcome, weatherForDay } from './world-detail.js';
+import { createCareerState, createDirectorState, startCareer, respondIncomingCall, deferIncomingCall, decideCrisis, authorizeCareerPlan, recordCareerResult } from './career.js';
+import { incomingCallTemplates, crisisTemplates } from './crisis-data.js';
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export function createInitialState(seed = 25102026) {
   const contacts = Object.fromEntries(people.map((person, index) => [person.id, {
@@ -16,7 +18,12 @@ export function createInitialState(seed = 25102026) {
   }]));
   return {
     schemaVersion: SCHEMA_VERSION,
-    version: '1.0.0',
+    version: '1.1.0',
+    career: createCareerState(),
+    director: createDirectorState(seed),
+    incomingCalls: [],
+    completedPhoneTopics: [],
+    activeCrisis: null,
     sequence: 0,
     campaignDecisions: [],
     caseQueue: [],
@@ -131,6 +138,7 @@ export function applyEffects(state, effects = {}) {
 }
 
 export function reducer(input, action) {
+  if(input.career?.status==='dismissed'&&!['NAVIGATE','UPDATE_SETTINGS','DISMISS_TUTORIAL','REPLACE_STATE'].includes(action.type))return input;
   const state = copy(input);
   state.history.push({ at: Date.now(), day: state.day, type: action.type, payload: action.payload || null });
   state.history = state.history.slice(-250);
@@ -152,23 +160,43 @@ export function reducer(input, action) {
       state.tutorialStep = action.choice.id === 'refuse' ? 1 : 2;
       state.stats.choices += 1;
       addJournal(state, `Pacto inicial: ${action.choice.title}.`, 'decision');
+      if(state.storyStage==='office')startCareer(state);
       return state;
     }
     case 'ACCEPT_SECOND_CALL':
       state.storyStage = 'office'; state.screen = 'office'; state.flags.conditionalAcceptance = true;
       state.objective = 'Estabilize as próximas 72 horas.'; state.tutorialStep = 2;
       addJournal(state, 'Convite aceito sob compromisso de autonomia e transparência.', 'decision');
+      startCareer(state);
       return state;
+    case 'RESPOND_INCOMING_CALL':
+      return respondIncomingCall(state,action.id,action.choiceId)?state:input;
+    case 'DEFER_INCOMING_CALL':
+      return deferIncomingCall(state,action.id)?state:input;
+    case 'CRISIS_DECISION':
+      return decideCrisis(state,action.id,action.choiceId)?state:input;
+    case 'CAREER_PLAN':
+      return authorizeCareerPlan(state,action.plan)?state:input;
+    case 'PAY_ARREARS': {
+      const amount=Math.min(state.finance.cash,state.finance.arrears||0);
+      if(amount<=0)return input;
+      state.finance.cash-=amount;state.finance.arrears-=amount;
+      state.finance.transactions.unshift({id:'DEBT-'+state.sequence,label:'Regularização de obrigações vencidas',amount:-amount,day:state.day});
+      state.finance.transactions=state.finance.transactions.slice(0,80);
+      addJournal(state,'Obrigações vencidas regularizadas em '+formatMoney(amount)+'.','finance');return state;
+    }
     case 'PHONE_CALL': {
       const { personId, topic, result, effects } = action.payload;
       const knownTopic=topics[personId]?.find(t=>t.id===topic);
       if(knownTopic&&topicRestriction(state,knownTopic))return input;
-      const firstTime = !state.phoneLog.some(call => call.personId === personId && call.topic === topic);
+      const topicKey=personId+':'+topic;
+      const firstTime = !state.completedPhoneTopics.includes(topicKey) && !state.phoneLog.some(call => call.personId === personId && call.topic === topic);
       if (effects.cash < 0 && state.finance.cash < -effects.cash) return input;
-      if (firstTime) applyEffects(state, effects);
+      if (firstTime) { applyEffects(state, effects); state.completedPhoneTopics.push(topicKey); }
       state.contacts[personId].calls += 1;
       state.contacts[personId].lastContactDay = state.day;
       state.phoneLog.unshift({ id: `CALL-${state.phoneLog.length + 1}`, personId, topic, result, day: state.day, time: state.minutes });
+      state.phoneLog=state.phoneLog.slice(0,100);
       if (firstTime) state.contacts[personId].trust = clamp(state.contacts[personId].trust + 1);
       state.stats.calls += 1;
       addJournal(state, `Ligação — ${topic}: ${firstTime ? result : 'A pauta já foi registrada; nenhum efeito foi aplicado novamente.'}`, 'phone');
@@ -252,6 +280,7 @@ export function reducer(input, action) {
       state.completedIncidents.unshift(incident);
       state.completedIncidents=state.completedIncidents.slice(0,80);
       state.stats.incidentsResolved += 1;
+      recordCareerResult(state,'resolved');
       addJournal(state, `${incident.title} resolvido: ${action.choice === 'A' ? template.choiceA : template.choiceB}.`, 'success');
       return state;
     }
@@ -259,16 +288,16 @@ export function reducer(input, action) {
       const chapter = chapters.find(item => item.id === action.payload?.chapter?.id);
       const choice = chapter?.choices.find(item => item.id === action.payload?.choice?.id);
       if (!chapter || !choice) return input;
-      if (state.day<chapter.fromDay || state.campaignDecisions.some(d=>d.chapterId===chapter.id) || (choice.effects.cash<0 && state.finance.cash < -choice.effects.cash))return input;
+      if (pendingChapter(state)?.id!==chapter.id || state.campaignDecisions.some(d=>d.chapterId===chapter.id) || (choice.effects.cash<0 && state.finance.cash < -choice.effects.cash))return input;
       applyEffects(state,choice.effects); if(choice.flag)state.flags[choice.flag]=true;
       state.campaignDecisions.push({chapterId:chapter.id,choiceId:choice.id,title:choice.title,day:state.day});
       state.stats.choices+=1;addJournal(state,`${chapter.title}: ${choice.title}. ${choice.text}`,'decision');
       if (!state.campaignEnding) {
         state.campaignEnding = campaignOutcome(state);
         if (state.campaignEnding) {
-          state.speed = 0;
-          state.objective = state.campaignEnding.title;
-          addJournal(state,`Audiência final: ${state.campaignEnding.title}. ${state.campaignEnding.summary}`,'decision');
+          state.campaignEnding.dismissed = true;
+          state.objective = 'Primeiro ciclo concluído. O mandato e as avaliações continuam.';
+          addJournal(state,`Balanço do primeiro ciclo: ${state.campaignEnding.title}. A carreira continua sem prazo final.`,'career');
         }
       }
       return state;
@@ -326,6 +355,7 @@ export function reducer(input, action) {
       if (Number.isFinite(action.settings?.fontScale)) state.settings.fontScale = clamp(action.settings.fontScale,1,1.5);
       return state;
     case 'SET_SPEED':
+      if(![0,1,3,6].includes(action.speed))return input;
       state.speed = action.speed;
       return state;
     case 'REPLACE_STATE':
@@ -489,7 +519,54 @@ export function migrateState(value) {
     array(merged.campaignEnding,'decisions',7);
     if (typeof merged.campaignEnding.dismissed !== 'boolean') fail('estado do final');
   } else if (source.schemaVersion < 3) merged.campaignEnding = campaignOutcome(merged);
-  merged.version='1.0.0';
+  if(source.schemaVersion<4){
+    merged.career=createCareerState();merged.director=createDirectorState(merged.seed);merged.incomingCalls=[];merged.activeCrisis=null;
+    if(merged.storyStage==='office')startCareer(merged,{legacy:true});
+    merged.completedPhoneTopics=[...new Set(merged.phoneLog.map(call=>call.personId+':'+call.topic))];
+    if(merged.campaignEnding)merged.campaignEnding.dismissed=true;
+  }
+  object(merged.career,'carreira');object(merged.director,'agenda');
+  const career=merged.career,director=merged.director;
+  if(!['active','probation','dismissed'].includes(career.status))fail('situação do mandato');
+  if(career.startedAt!==null){numeric(career,'startedAt');numeric(career,'nextReviewAt');}
+  else if(career.nextReviewAt!==null)fail('agenda antes da posse');
+  numeric(career,'score',0,100);numeric(career,'consecutivePoorReviews',0,1000,true);
+  for(const key of ['period','totals']){object(career[key],'indicadores de carreira');for(const metric of ['resolved','missed','answeredCalls','missedCalls'])numeric(career[key],metric,0,Number.MAX_SAFE_INTEGER,true);}
+  for(const [key,max]of [['reviews',60],['warnings',20],['plans',30],['milestones',100]])array(career,key,max);
+  numeric(career,'crisesResolved',0,Number.MAX_SAFE_INTEGER,true);
+  if(career.lastPlanAt!==null)numeric(career,'lastPlanAt');
+  for(const review of career.reviews){object(review,'avaliação');numeric(review,'at');numeric(review,'score',0,100);text(review,'title');array(review,'reasons',20);if(review.reasons.some(v=>typeof v!=='string'))fail('motivos da avaliação');}
+  for(const warning of career.warnings){object(warning,'advertência');text(warning,'title');array(warning,'reasons',20);numeric(warning,'deadline');}
+  for(const plan of career.plans){if(!['community','integrity','services'].includes(plan.id)||!['pending','completed'].includes(plan.status))fail('plano de carreira');numeric(plan,'startedAt');numeric(plan,'finishesAt');text(plan,'title');}
+  if(career.status==='dismissed'){object(career.dismissal,'demissão');numeric(career.dismissal,'at');text(career.dismissal,'reason');array(career.dismissal,'reasons',20);merged.speed=0;}
+  else if(career.dismissal!==null)fail('demissão incompatível com mandato ativo');
+  numeric(director,'rngState',0,4294967295,true);numeric(director,'eventCount',0,Number.MAX_SAFE_INTEGER,true);
+  for(const key of ['nextIncidentAt','nextCallAt','nextCrisisAt']){if(career.startedAt!==null)numeric(director,key);else if(director[key]!==null)fail('agenda antes da posse');}
+  if(director.lastEventAt!==null)numeric(director,'lastEventAt');
+  if(director.lastStop!==null){object(director.lastStop,'último aviso');text(director.lastStop,'type');text(director.lastStop,'title');numeric(director.lastStop,'at');}
+  object(director.lastTemplates,'pautas já usadas');for(const key of Object.keys(director.lastTemplates))numeric(director.lastTemplates,key);
+  array(director,'callHistory',80);array(director,'crisisHistory',24);
+  array(merged,'completedPhoneTopics',200);if(merged.completedPhoneTopics.some(v=>typeof v!=='string'))fail('pauta concluída');
+  array(merged,'incomingCalls',40);
+  let pendingCalls=0;const callIds=new Set();
+  for(const call of merged.incomingCalls){
+    object(call,'chamada recebida');identifier(call);if(callIds.has(call.id))fail('chamada repetida');callIds.add(call.id);
+    const template=incomingCallTemplates.find(t=>t.id===call.templateId);if(!template||call.personId!==template.personId||!['ringing','deferred','answered','missed'].includes(call.status))fail('pauta recebida');
+    numeric(call,'arrivedAt');numeric(call,'expiresAt');if(call.status==='deferred')numeric(call,'resumeAt');
+    if(['ringing','deferred'].includes(call.status))pendingCalls++;
+    call.choices=structuredClone(template.choices);call.title=template.title;call.body=template.body;
+    if(call.status==='answered'&&!template.choices.some(c=>c.id===call.choiceId))fail('resposta de chamada');
+  }
+  if(pendingCalls>1)fail('chamadas simultâneas');
+  if(merged.activeCrisis!==null){
+    const crisis=merged.activeCrisis;object(crisis,'crise');identifier(crisis);
+    const template=crisisTemplates.find(t=>t.id===crisis.templateId);if(!template)fail('crise desconhecida');
+    numeric(crisis,'stageIndex',0,template.stages.length-1,true);numeric(crisis,'startedAt');numeric(crisis,'stageArrivedAt');numeric(crisis,'decisionDueAt');
+    if(!['decision','waiting'].includes(crisis.status))fail('etapa da crise');if(crisis.status==='waiting'){numeric(crisis,'nextStageAt');if(crisis.stageIndex>=template.stages.length-1)fail('etapa final em espera');}
+    const stage=template.stages[crisis.stageIndex];crisis.title=template.title;crisis.scope=template.scope;crisis.stageTitle=stage.title;crisis.description=stage.body;crisis.personId=stage.personId;
+    crisis.choices=crisis.status==='decision'?structuredClone(stage.choices):[];array(crisis,'history',template.stages.length);
+  }
+  merged.version='1.1.0';
   merged.schemaVersion = SCHEMA_VERSION;
   return merged;
 }

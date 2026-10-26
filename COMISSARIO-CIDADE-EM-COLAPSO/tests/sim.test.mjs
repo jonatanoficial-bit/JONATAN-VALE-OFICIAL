@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInitialState, reducer } from '../src/state.js';
 import { advanceWorld, rngStep, spawnIncident } from '../src/sim.js';
+import { openingChoices } from '../src/content.js';
 
 test('RNG é determinístico para o mesmo estado', () => {
   assert.deepEqual(rngStep(12345), rngStep(12345));
@@ -27,9 +28,9 @@ test('despacho avança e resolve liberando viatura', () => {
 });
 
 test('avanço de sete dias gera eventos e preserva números válidos', () => {
-  let state = createInitialState(99);
+  let state = reducer(createInitialState(99),{type:'OPENING_CHOICE',choice:openingChoices[0]});
   for (let i = 0; i < 7; i += 1) state = advanceWorld(state, 1440);
   assert.equal(state.day, 7);
-  assert.ok(state.activeIncidents.length > 0);
+  assert.ok(state.activeIncidents.length + state.completedIncidents.length > 0);
   assert.ok(Number.isFinite(state.finance.cash));
 });

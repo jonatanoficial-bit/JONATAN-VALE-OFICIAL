@@ -1,9 +1,9 @@
 {
   "name": "comissario-cidade-em-colapso",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "Parte 3 jogável — Comissário: Cidade em Colapso",
+  "description": "Parte 4 — Carreira contínua de Comissário: Cidade em Colapso",
   "scripts": {
     "test": "node --test --test-isolation=none tests/*.test.mjs",
     "check": "node --experimental-vm-modules scripts/check.mjs",

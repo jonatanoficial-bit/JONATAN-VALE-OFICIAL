@@ -7,9 +7,10 @@ const FALLBACK_KEY = 'comissario-save-';
 const MAX_BYTES = 5 * 1024 * 1024;
 const SAVE_FORMAT = 'comissario-save';
 const STORAGE_MESSAGE = 'Não foi possível acessar o armazenamento. Exporte seu progresso em JSON antes de fechar o jogo.';
+export const CAREER_SAFETY_SLOT = 4;
 
 function validateSlot(slot) {
-  if (!Number.isInteger(slot) || slot < 0 || slot > 3) throw new Error('Slot inválido: use 0 para autosave ou 1–3 para salvamento manual.');
+  if (!Number.isInteger(slot) || slot < 0 || slot > CAREER_SAFETY_SLOT) throw new Error('Slot inválido: use 0 para autosave, 1–3 para salvamento manual ou 4 para recuperação da carreira.');
 }
 
 function openDb() {
@@ -138,7 +139,7 @@ function makeRecord(state, slot, kind) {
 
 export async function saveGame(state, slot = 1, kind = 'manual') {
   validateSlot(slot);
-  const { savedState, record } = makeRecord(state, slot, kind);
+  const { savedState, record } = makeRecord(state, slot, slot === CAREER_SAFETY_SLOT ? 'career-safety' : kind);
   const outcomes = await Promise.allSettled([
     databaseOperation('readwrite', store => store.put(record)),
     Promise.resolve().then(() => globalThis.localStorage.setItem(`${FALLBACK_KEY}${slot}`, JSON.stringify(record)))
@@ -180,14 +181,16 @@ export async function loadGame(slot = 1) {
 async function slotMetadata(slot) {
   try {
     const state = await loadGame(slot);
-    return state ? { slot, savedAt: state.lastSavedAt, day: state.day, minutes: state.minutes, kind: slot === 0 ? 'auto' : 'manual' } : { slot, empty: true };
+    return state ? { slot, savedAt: state.lastSavedAt, day: state.day, minutes: state.minutes, kind: slot === 0 ? 'auto' : slot === CAREER_SAFETY_SLOT ? 'career-safety' : 'manual' } : { slot, empty: true };
   } catch (error) { return { slot, corrupt: true, error: error.message }; }
 }
 
 export async function listSaves() { return Promise.all([1, 2, 3].map(slotMetadata)); }
 export async function listAutoSave() { return slotMetadata(0); }
+export async function listCareerSafety() { return slotMetadata(CAREER_SAFETY_SLOT); }
 
 export async function loadLatestGame() {
+  // The pre-dismissal snapshot is an explicit recovery choice, never Continue.
   const results = await Promise.allSettled([0, 1, 2, 3].map(slot => loadGame(slot)));
   const states = results.filter(result => result.status === 'fulfilled' && result.value).map(result => result.value);
   if (states.length) return states.sort((a, b) => (Date.parse(b.lastSavedAt) || 0) - (Date.parse(a.lastSavedAt) || 0))[0];

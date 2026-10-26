@@ -1,4 +1,4 @@
-const CACHE = 'comissario-v1.0.0';
+const CACHE = 'comissario-v1.1.0';
 const ASSETS = [
   './', './index.html', './styles.css', './manifest.webmanifest',
   './src/app.js', './src/content.js', './src/state.js', './src/sim.js',
@@ -6,6 +6,7 @@ const ASSETS = [
   './src/art.js', './src/campaign.js', './src/phone.js', './src/routes.js',
   './src/icons.js', './src/view-helpers.js', './src/world-detail.js',
   './src/audio.js', './src/i18n.js', './assets/manifest.json',
+  './src/career.js', './src/career-view.js', './src/crisis-data.js',
   './assets/icons/icon-192.png', './assets/icons/icon-512.png', './assets/icons/icon.svg',
   ...['c01','c02','c03','c04','c05'].map(id=>'./assets/backgrounds/'+id+'.webp'),
   ...Array.from({length:10},(_,i)=>'./assets/references/c'+String(i+1).padStart(2,'0')+'.webp')

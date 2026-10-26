@@ -3,12 +3,13 @@ import { addJournal } from './state.js';
 import { currentChapter } from './campaign.js';
 import { roadNodes } from './routes.js';
 import { updateDailyWorld } from './world-detail.js';
+import { processCareer, runDirector, careerBoundaries, signalWorldEvent, recordCareerResult } from './career.js';
 const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
 export const worldTime=s=>s.day*1440+s.minutes;
 export function rngStep(rngState){let x=rngState>>>0||0x6d2b79f5;x^=x<<13;x^=x>>>17;x^=x<<5;return{state:x>>>0,value:(x>>>0)/4294967296};}
 export function pickDeterministic(list,rngState){const next=rngStep(rngState);return{item:list[Math.floor(next.value*list.length)%list.length],rngState:next.state};}
 export function spawnIncident(state,forcedType){
-  if(state.activeIncidents.length>=5)return null;
+  if(state.activeIncidents.length>=2)return null;
   const recent=state.completedIncidents.slice(0,2).map(i=>i.type);
   const eligible=eventTemplates.filter(e=>!state.activeIncidents.some(i=>i.type===e.type)&&!recent.includes(e.type));
   const picked=pickDeterministic(eligible.length?eligible:eventTemplates,state.rngState);state.rngState=picked.rngState;
@@ -21,20 +22,21 @@ export function spawnIncident(state,forcedType){
   state.activeIncidents.push(incident);addJournal(state,district.name+': '+template.title+'.','alert');return incident.id;
 }
 function processStep(state,step){
-  const oldDay=state.day,oldTime=worldTime(state);state.minutes+=step;
+  const oldDay=state.day,oldTime=worldTime(state),eventCount=state.director.eventCount;state.minutes+=step;
   while(state.minutes>=1440){state.minutes-=1440;state.day+=1;}
   const now=worldTime(state);
   for(const incident of state.activeIncidents){
     if(incident.stage==='enroute'){
       incident.dispatchedAt??=oldTime;incident.arrivesAt??=oldTime+incident.eta;
       incident.progress=clamp((now-incident.dispatchedAt)/Math.max(1,incident.arrivesAt-incident.dispatchedAt)*100);
-      if(incident.progress>=100){incident.stage='onscene';incident.onsceneAt=now;addJournal(state,incident.id+': unidade no local. Decisão de comando disponível.','operation');}
+      if(incident.progress>=100){incident.stage='onscene';incident.onsceneAt=now;addJournal(state,incident.id+': unidade no local. Decisão de comando disponível.','operation');if(state.director.eventCount===eventCount)signalWorldEvent(state,'arrival',incident.title+': unidade no local');}
     }
     if(incident.stage==='pending'&&now>incident.deadline&&!incident.escalated){incident.escalated=true;state.city.trust=clamp(state.city.trust-2);state.city.security=clamp(state.city.security-2);addJournal(state,incident.id+': atraso de resposta; segurança e confiança −2.','warning');}
     if((incident.stage==='pending'&&now>(incident.spawnAt??oldTime)+720)||(incident.stage==='onscene'&&now>(incident.onsceneAt??now)+720)){
       incident.stage='finished';incident.resolution='missed';state.city.security=clamp(state.city.security-2);
       const v=state.fleet.find(v=>v.id===incident.assignedVehicleId);if(v){v.status='available';delete v.incidentId;}
       state.completedIncidents.unshift(incident);addJournal(state,incident.id+': encerrado com resposta insuficiente; incluído na revisão de serviço.','warning');
+      recordCareerResult(state,'missed');
     }
   }
   state.activeIncidents=state.activeIncidents.filter(i=>i.stage!=='finished');state.completedIncidents=state.completedIncidents.slice(0,80);
@@ -60,12 +62,26 @@ function processStep(state,step){
       state.finance.transactions=state.finance.transactions.slice(0,80);
       state.lastFinanceMonth=month;addJournal(state,'Fechamento mensal: liberação US$ '+release.toLocaleString('pt-BR')+'; compromissos US$ '+expenses.toLocaleString('pt-BR')+(expenses>paid?'; saldo insuficiente registrado em obrigações':'')+'.','finance');
     }
-    state.objective=state.campaignEnding ? (state.campaignEnding.dismissed ? 'Gestão contínua: acompanhe ocorrências, orçamento e compromissos.' : state.campaignEnding.title) : currentChapter(state).title+' · consulte o briefing e responda às demandas.';
+    state.objective=currentChapter(state).title+' · acompanhe o turno, a equipe e as próximas avaliações do mandato.';
     state.city.stability=Math.round((state.city.security+state.city.trust+state.city.health+state.city.integrity)/4);
-    if(state.activeIncidents.length<3)spawnIncident(state);
   }
-  if(Math.floor(now/360)>Math.floor(oldTime/360)&&state.activeIncidents.length<3)spawnIncident(state);
+  if(state.director.eventCount===eventCount&&!processCareer(state))runDirector(state,spawnIncident);
 }
-export function advanceWorld(input,tickMinutes=10){const state=structuredClone(input);if(!Number.isFinite(tickMinutes)||tickMinutes<0||tickMinutes>1440*365)return input;for(let left=tickMinutes;left>0;){const step=Math.min(60,left);processStep(state,step);left-=step;}return state;}
+function operationalBoundaries(s){
+  const now=worldTime(s);
+  return [...s.activeIncidents.flatMap(i=>[i.arrivesAt,i.deadline+1,(i.spawnAt??now)+721,i.onsceneAt?i.onsceneAt+721:null]),...s.fleet.flatMap(v=>[v.deliveryAt,v.readyAt]),...s.buildings.map(b=>b.completesAt),...s.staff.map(p=>p.readyAt),...s.caseQueue.filter(t=>!t.done&&s.caseFile.assignedDetectives.length).map(t=>t.finishesAt)].filter(t=>Number.isFinite(t)&&t>now);
+}
+export function advanceWorld(input,tickMinutes=1,{interrupt=false}={}){
+  if(!Number.isInteger(tickMinutes)||tickMinutes<0||tickMinutes>1440*365||input.career?.status==='dismissed')return input;
+  const state=structuredClone(input);
+  const count=state.director.eventCount;
+  for(let left=tickMinutes;left>0;){
+    const now=worldTime(state),boundary=Math.min(Infinity,...careerBoundaries(state),...operationalBoundaries(state));
+    const step=Math.max(1,Math.min(60,left,boundary-now,1440-state.minutes));
+    processStep(state,step);left-=step;
+    if(state.career.status==='dismissed'||(interrupt&&state.director.eventCount!==count)){if(interrupt)state.speed=0;break;}
+  }
+  return state;
+}
 export function simulateDays(input,days=1){let state=structuredClone(input);for(let d=0;d<days;d++)state=advanceWorld(state,1440);return state;}
 export function formatGameTime(s){return 'DIA '+(s.day+1)+' · '+String(Math.floor(s.minutes/60)).padStart(2,'0')+':'+String(s.minutes%60).padStart(2,'0');}

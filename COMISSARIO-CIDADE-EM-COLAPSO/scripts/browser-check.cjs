@@ -9,7 +9,7 @@ const OUT = path.resolve(process.env.QA_ARTIFACT_DIR || path.join(ROOT, 'qa-arti
 const BASE = 'https://comissario.test/COMISSARIO-CIDADE-EM-COLAPSO/';
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.webp': 'image/webp', '.png': 'image/png', '.svg': 'image/svg+xml' };
 const VIEWPORTS = [{ width: 1440, height: 1000 }, { width: 390, height: 844 }, { width: 360, height: 640 }];
-const report = { startedAt: new Date().toISOString(), environment: 'Chromium / desktop and mobile emulation; local files served through Playwright routes under GitHub Pages base path', serviceWorkerTested: false, devices: [], portable: { result: 'NOT_REQUESTED' } };
+const report = { version: '1.1.0', startedAt: new Date().toISOString(), environment: 'Chromium / desktop and mobile emulation; local files served through Playwright routes under GitHub Pages base path', serviceWorkerTested: false, devices: [], portable: { result: 'NOT_REQUESTED' } };
 
 async function serve(context) {
   await context.route('**/*', async route => {
@@ -42,6 +42,34 @@ async function awaitSave(page, predicate, slot = 0) {
     await page.waitForTimeout(100);
   }
   assert.fail('O save não atingiu o estado esperado no arquivo ' + slot + ': ' + JSON.stringify(latest?.stats));
+}
+
+const gameTime = state => state.day * 1440 + state.minutes;
+async function answerRingingCall(page) {
+  const before = await saved(page);
+  const call = before?.incomingCalls?.find(item => item.status === 'ringing');
+  if (!call) return false;
+  const dialog = page.locator('.incoming-call-dialog');
+  if (!await dialog.count()) await page.locator('[data-action="answer-incoming"][data-id="' + call.id + '"]').first().click();
+  await dialog.waitFor();
+  await dialog.locator('[data-action="respond-incoming"]').first().click();
+  await awaitSave(page, state => state.incomingCalls.some(item => item.id === call.id && item.status === 'answered'));
+  const result=page.locator('.call-dialog [data-action="close-modal"]');
+  if(await result.count())await result.first().click();
+  return true;
+}
+
+async function advanceOnMapUntil(page, predicate, maximum = 48) {
+  for (let count = 0; count < maximum; count++) {
+    let state = await saved(page);
+    if (predicate(state)) return state;
+    await answerRingingCall(page);
+    state = await saved(page);
+    const before = gameTime(state);
+    await page.locator('.header-actions [data-action="advance-time"]').click();
+    await awaitSave(page, next => gameTime(next) > before);
+  }
+  assert.fail('A progressão cronológica não alcançou a condição esperada.');
 }
 
 async function noOverflow(page, label, device) {
@@ -89,11 +117,33 @@ async function testViewport(browser, viewport) {
     await screenshot('intro');
     await page.locator('[data-choice="audit"]').click();
     await page.locator('.office-scene').waitFor();
-    await awaitSave(page, state => state.storyStage === 'office');
+    const opening = await awaitSave(page, state => state.storyStage === 'office');
+    assert.equal(opening.activeIncidents.length, 0, 'A posse não pode gerar ocorrências simultâneas');
+    assert.equal(opening.incomingCalls.filter(call => call.status === 'ringing').length, 0, 'A chamada deve aguardar o horário previsto');
+    assert.equal(opening.activeCrisis, null, 'Crises não podem começar junto com a posse');
+    assert.equal(opening.career.status, 'active');
+    assert.ok(opening.director.nextCallAt > gameTime(opening));
+    assert.ok(opening.director.nextIncidentAt > opening.director.nextCallAt);
     await page.locator('[data-action="set-speed"][data-speed="0"]').click();
+    const pausedClock = await page.locator('.world-clock b').textContent();
+    await page.waitForTimeout(2200);
+    assert.equal(await page.locator('.world-clock b').textContent(), pausedClock, 'Pausa deve preservar o relógio enquanto a tela permanece aberta');
     await noOverflow(page, 'office', device);
     await screenshot('office');
-    device.steps.push('Título, rolagem da introdução, prólogo e autosave');
+    device.steps.push('Título, rolagem da introdução, posse tranquila e agenda futura persistida');
+
+    await nav('campaign');
+    await page.locator('.career-panel').waitFor();
+    await page.locator('[data-action="wait-next-event"]').first().click();
+    const firstCallState = await awaitSave(page, state => state.incomingCalls.some(call => call.status === 'ringing'));
+    const firstCall = firstCallState.incomingCalls.find(call => call.status === 'ringing');
+    assert.ok(gameTime(firstCallState) > gameTime(opening), 'O relógio deve avançar antes da chamada');
+    assert.equal(firstCallState.activeIncidents.length, 0, 'Chamada de orientação e ocorrência não devem chegar em bloco');
+    assert.equal(firstCallState.speed, 0, 'Uma novidade importante deve pausar o avanço');
+    await answerRingingCall(page);
+    await noOverflow(page, 'career', device);
+    await screenshot('career');
+    device.steps.push('Espera interrompida pela primeira ligação e resposta persistente');
 
     await nav('phone');
     for (let index = 1; index <= 12; index++) {
@@ -130,6 +180,10 @@ async function testViewport(browser, viewport) {
     device.steps.push('Compra e contratação alteram inventários e saves');
 
     await nav('map');
+    const firstIncidentState = await advanceOnMapUntil(page, state => state.activeIncidents.length > 0);
+    assert.equal(firstIncidentState.activeIncidents.length, 1, 'A primeira ocorrência deve chegar sozinha');
+    assert.ok(firstIncidentState.activeIncidents[0].spawnAt > firstCall.arrivedAt, 'Eventos precisam ter horários separados');
+    assert.equal(firstIncidentState.activeCrisis, null);
     const panButton = page.locator('[data-map-action="pan"]');
     if (await panButton.count()) {
       await panButton.click();
@@ -160,8 +214,7 @@ async function testViewport(browser, viewport) {
     await nav('case');
     await page.locator('[data-action="case-task"][data-id="cameras"]').click();
     await nav('map');
-    for (let step = 0; step < 4; step++) await page.locator('.header-actions [data-action="advance-time"]').click();
-    await awaitSave(page, state => state.caseFile.actions.includes('cameras') && state.garageCapacity > 4);
+    await advanceOnMapUntil(page, state => state.caseFile.actions.includes('cameras') && state.garageCapacity > 4);
     device.steps.push('Construção e diligência concluem após tempo de jogo');
 
     await nav('settings');
@@ -216,6 +269,62 @@ async function testViewport(browser, viewport) {
     assert.equal((await saved(page, 2)).lastSavedAt, manual.lastSavedAt, 'Autosave não pode substituir arquivo manual 2');
     await noOverflow(page, 'restored', device);
     device.steps.push('Arquivo manual, autosave separado, export/import, confirmação e retomada');
+
+    // Import a real legacy-shaped save through the UI: the new director must not
+    // reroll incident RNG or inject a burst on resuming an older career.
+    const legacy = structuredClone(manual);
+    legacy.schemaVersion = 3; legacy.version = '1.0.0';
+    for (const key of ['career', 'director', 'incomingCalls', 'activeCrisis', 'crisisHistory']) delete legacy[key];
+    const legacyPath = path.join(OUT, viewport.width + '-legacy-v3.json');
+    await fs.writeFile(legacyPath, JSON.stringify(legacy));
+    await nav('saves');
+    await page.locator('#import-save').setInputFiles(legacyPath);
+    await page.locator('[data-action="confirm-import"][data-slot="3"]').click();
+    const migrated = await awaitSave(page, state => state.schemaVersion === 4, 3);
+    assert.equal(migrated.rngState, manual.rngState);
+    assert.equal(migrated.activeIncidents.length, manual.activeIncidents.length);
+    assert.ok(migrated.director.nextIncidentAt > gameTime(migrated));
+    assert.ok(migrated.director.nextCallAt > gameTime(migrated));
+    assert.deepEqual(migrated.fleet, manual.fleet);
+    device.steps.push('Importação v3 preserva frota, RNG e espaça novos eventos');
+
+    // Construct a deliberately poor long-running administration through the same
+    // simulation API, then verify the career's terminal UI and saved reasons.
+    const reviewReady = await page.evaluate(async () => {
+      const { loadGame, saveGame } = await import('./src/persistence.js');
+      const { advanceWorld } = await import('./src/sim.js');
+      let state = await loadGame(3);
+      for (const key of ['trust', 'integrity', 'security', 'health', 'morale']) state.city[key] = 10;
+      state.contacts.P07.trust = 10; state.operationsReadiness = 10;
+      state.finance.arrears = 1000000;
+      state = advanceWorld(state, 60 * 1440);
+      state.day = Math.floor((state.career.nextReviewAt - 1) / 1440);
+      state.minutes = (state.career.nextReviewAt - 1) % 1440;
+      state.activeIncidents = []; state.incomingCalls = []; state.activeCrisis = null;
+      state.career.plans = [];
+      for (const key of ['nextCallAt', 'nextIncidentAt', 'nextCrisisAt']) state.director[key] = state.career.nextReviewAt + 1440;
+      state.speed = 0;
+      await saveGame(state, 3, 'test-career-review');
+      return { status: state.career.status, reviews: state.career.reviews.length };
+    });
+    assert.equal(reviewReady.status, 'probation');
+    assert.equal(reviewReady.reviews, 2);
+    await nav('saves');
+    await page.locator('[data-action="load-slot"][data-slot="3"]').click();
+    await nav('campaign');
+    await page.locator('[data-action="advance-time"][data-minutes="15"]').click();
+    const dismissed = await awaitSave(page, state => state.career.status === 'dismissed');
+    assert.ok(dismissed.career.dismissal.reasons.length);
+    const safety = await awaitSave(page, state => state.career.status === 'probation', 4);
+    assert.equal(safety.career.reviews.length, 2, 'Recuperação preserva estado anterior à avaliação terminal');
+    assert.equal((await saved(page, 3)).career.status, 'probation', 'Arquivo manual não pode ser substituído pela demissão');
+    await page.locator('.dismissal-panel').waitFor();
+    await noOverflow(page, 'dismissal', device);
+    await screenshot('dismissal');
+    await nav('saves');
+    await page.locator('.career-safety [data-action="load-slot"][data-slot="4"]').click();
+    await awaitSave(page, state => state.career.status === 'probation');
+    device.steps.push('Demissão pela interface, recuperação pré-avaliação e preservação dos arquivos manuais');
 
     assert.deepEqual(device.errors, [], 'Erros no navegador');
     device.result = 'PASS';
